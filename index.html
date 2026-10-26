@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05080c">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<title>WORLD WALL</title>
+<meta property="og:title" content="World Wall">
+<meta property="og:description" content="Live world news wall: verified streams, wire headlines, one screen.">
+<meta property="og:image" content="/logo-full.jpg">
+<style>
+  :root{
+    --bg:#05080c; --panel:#0a1119; --panel2:#0d1622; --line:#1d2f45;
+    --txt:#cfe3f5; --dim:#6f8dab; --amber:#ffb000; --red:#ff3b30; --green:#2ee66b;
+    --cyan:#37c8e8;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{background:var(--bg); color:var(--txt); font-family:"Consolas","SF Mono","Menlo",monospace; display:flex; flex-direction:column; overflow:hidden;}
+  /* ---------- header ---------- */
+  header{display:flex; align-items:center; gap:14px; padding:8px 14px; background:linear-gradient(180deg,#0c1624,#070d15); border-bottom:2px solid var(--line); flex-wrap:wrap;}
+  .logo{display:flex; align-items:center; gap:10px; font-size:20px; letter-spacing:3px; font-weight:700; color:#fff;}
+  .logo img{height:34px; width:34px; border-radius:7px;}
+  .logo span{color:var(--cyan);}
+  .clocks{display:flex; gap:14px; margin-left:8px; flex-wrap:wrap;}
+  .clock{text-align:center; min-width:86px;}
+  .clock .city{font-size:9px; letter-spacing:2px; color:var(--dim);}
+  .clock .time{font-size:16px; color:var(--cyan); font-weight:700;}
+  .hdr-right{margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .livestat{font-size:11px; color:var(--dim); letter-spacing:1px;}
+  .livestat b{color:var(--green);}
+  button{background:var(--panel2); color:var(--txt); border:1px solid var(--line); padding:6px 10px; font:inherit; font-size:11px; letter-spacing:1px; cursor:pointer; text-transform:uppercase;}
+  button:hover{border-color:var(--cyan); color:#fff;}
+  button.active{background:#14304a; border-color:var(--cyan); color:#fff;}
+  button.warn:hover{border-color:var(--red); color:var(--red);}
+  /* ---------- layout ---------- */
+  main{flex:1; display:flex; min-height:0;}
+  #wall{flex:1; display:grid; gap:6px; padding:6px; min-width:0; min-height:0; overflow:hidden;}
+  /* ---------- tile ---------- */
+  .tile{background:var(--panel); border:1px solid var(--line); display:flex; flex-direction:column; min-width:0; min-height:0;}
+  .tile.focused{border-color:var(--amber);}
+  .tile .bar{display:flex; align-items:center; gap:6px; padding:4px 8px; background:var(--panel2); border-bottom:1px solid var(--line);}
+  .tile .name{font-size:11px; letter-spacing:1px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .dot{width:8px; height:8px; border-radius:50%; background:#556; flex:none;}
+  .dot.live{background:var(--red); box-shadow:0 0 6px var(--red); animation:pulse 1.6s infinite;}
+  .dot.off{background:#3a4656;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .badge{font-size:9px; color:var(--dim); border:1px solid var(--line); padding:1px 4px; letter-spacing:1px;}
+  .tile .bar .sp{flex:1;}
+  .tile .bar button{padding:2px 6px; font-size:10px;}
+  .screen{position:relative; width:100%; flex:1; min-height:0; background:#000;}
+  .screen iframe,.screen video{position:absolute; inset:0; width:100%; height:100%; border:0;}
+  .plate{position:absolute; inset:0; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center; text-align:center; padding:12px; background:radial-gradient(ellipse at center,#0b1522,#04070b); color:var(--dim); font-size:12px; letter-spacing:1px;}
+  .plate a{color:var(--cyan);}
+  .plate .big{color:var(--amber); font-size:13px; letter-spacing:2px;}
+  /* focus overlay */
+  #focusWrap{position:fixed; inset:34px 20px 44px 20px; background:var(--panel); border:2px solid var(--amber); z-index:40; display:none; flex-direction:column;}
+  #focusWrap.open{display:flex;}
+  #focusWrap .screen{flex:1; aspect-ratio:auto;}
+  /* ---------- intel rail ---------- */
+  #rail{width:330px; flex:none; border-left:2px solid var(--line); background:var(--panel); display:flex; flex-direction:column; min-height:0;}
+  #rail h2{font-size:11px; letter-spacing:2px; color:var(--amber); padding:8px 10px 4px;}
+  #situation{padding:0 10px 8px; border-bottom:1px solid var(--line);}
+  #situation .sit{font-size:12px; padding:5px 0; border-bottom:1px dashed #16283d; line-height:1.35;}
+  #situation .sit b{color:var(--cyan); font-weight:400; font-size:10px; letter-spacing:1px; display:block;}
+  #headlines{flex:1; overflow:auto; padding:4px 10px;}
+  .hl{padding:5px 0; border-bottom:1px solid #101c2c; font-size:12px; line-height:1.35;}
+  .hl a{color:var(--txt); text-decoration:none;}
+  .hl a:hover{color:#fff; text-decoration:underline;}
+  .hl .meta{font-size:10px; color:var(--dim); letter-spacing:1px;}
+  .hl .meta b{color:var(--cyan); font-weight:400;}
+  #rail .addbox{padding:8px 10px; border-top:1px solid var(--line);}
+  /* ---------- ticker ---------- */
+  #ticker{border-top:2px solid var(--line); background:#070d15; height:30px; overflow:hidden; display:flex; align-items:center;}
+  #ticker .tag{flex:none; background:var(--red); color:#fff; font-size:11px; font-weight:700; letter-spacing:2px; padding:0 10px; height:100%; display:flex; align-items:center;}
+  #tickerTrack{display:flex; white-space:nowrap; animation:tick 240s linear infinite; will-change:transform;}
+  #tickerTrack span{padding:0 28px; font-size:12px; color:var(--txt);}
+  #tickerTrack span i{color:var(--amber); font-style:normal; padding-right:8px;}
+  @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  /* ---------- modal ---------- */
+  .modal{position:fixed; inset:0; background:rgba(2,5,9,.82); display:none; align-items:center; justify-content:center; z-index:60;}
+  .modal.open{display:flex;}
+  .modal .box{background:var(--panel); border:1px solid var(--cyan); width:min(560px,92vw); max-height:86vh; overflow:auto; padding:16px;}
+  .modal h3{letter-spacing:2px; font-size:13px; color:#fff; margin-bottom:10px;}
+  .modal label{display:block; font-size:10px; letter-spacing:1px; color:var(--dim); margin:10px 0 4px;}
+  .modal input{width:100%; background:#04070b; border:1px solid var(--line); color:var(--txt); padding:8px; font:inherit; font-size:13px;}
+  .modal .row{display:flex; gap:8px; margin-top:14px; justify-content:flex-end;}
+  .preset{display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #101c2c; font-size:12px;}
+  /* ---------- scenes / surge / night / watchdog ---------- */
+  #scenebar{display:flex; gap:6px; padding:6px 14px; background:#070d15; border-bottom:1px solid var(--line); flex-wrap:wrap; align-items:center;}
+  #scenebar .sb-label{font-size:10px; letter-spacing:2px; color:var(--dim); margin-right:2px;}
+  #scenebar .pager{display:flex; gap:4px; align-items:center; margin-left:auto;}
+  #scenebar .pager .pg-info{font-size:10px; letter-spacing:2px; color:var(--dim); padding:0 6px; white-space:nowrap;}
+  #scenebar .pager .pg-dot{min-width:26px; padding:4px 6px;}
+  #scenebar .pager .pg-dot.active{background:#3a2a00; border-color:var(--amber); color:var(--amber);}
+  #scenebar .pager button:focus-visible, #scenebar .rot:focus-visible{outline:2px solid var(--amber); outline-offset:1px;}
+  #scenebar .rot.active{background:#3a2a00; border-color:var(--amber); color:var(--amber);}
+  body.mobile #scenebar .pager, body.mobile #scenebar .rot{display:none;}
+  #surgebar .pghint{color:var(--amber); letter-spacing:2px;}
+  .owner{font-size:9px; color:var(--dim); letter-spacing:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .stallbadge{font-size:9px; color:#000; background:var(--amber); padding:1px 4px; letter-spacing:1px; font-weight:700; flex:none;}
+  .tile.stalled{border-color:var(--amber);}
+  .tile.surging{border-color:var(--red); box-shadow:0 0 0 1px var(--red), 0 0 14px rgba(255,59,48,.45);}
+  #surgebar{display:none; background:#2a0d0b; border-bottom:2px solid var(--red); color:#ffd9d4; padding:6px 14px; font-size:12px; letter-spacing:1px; align-items:center; gap:12px; flex-wrap:wrap;}
+  #surgebar.on{display:flex;}
+  #surgebar b{color:#fff; letter-spacing:2px;}
+  body.night #wall .tile .screen{filter:brightness(.32) saturate(.65);}
+  body.night.surge-wake #wall .tile .screen{filter:none;}
+  body.night #tickerTrack{animation-duration:600s;}
+  body.night .clock .time{color:var(--dim);}
+  .hidden{display:none !important;}
+  @media (max-width:900px){ #rail{display:none;} }
+  /* ---------- mobile: scroll list, one stream at a time ---------- */
+  body.mobile{height:100dvh;}
+  body.mobile header{gap:8px; padding:6px 10px;}
+  body.mobile .logo{font-size:15px; letter-spacing:2px;}
+  body.mobile .logo img{height:26px; width:26px;}
+  body.mobile .clocks{flex-wrap:nowrap; overflow-x:auto; margin-left:0; gap:10px; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+  body.mobile .clock{min-width:60px;}
+  body.mobile .clock .time{font-size:13px;}
+  body.mobile .hdr-right{margin-left:0;}
+  body.mobile #scenebar{flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+  body.mobile #scenebar button{flex:none;}
+  body.mobile #wall{display:block; overflow-y:auto; overflow-x:hidden; padding:8px;}
+  body.mobile .tile{margin-bottom:10px;}
+  body.mobile .tile .screen{flex:none; height:auto; aspect-ratio:16/9;}
+  body.mobile .tile .bar button{padding:6px 9px; font-size:12px;}
+  body.mobile [data-act="focus"]{display:none;}
+  body.mobile .playcta{font-size:30px; color:var(--amber); line-height:1;}
+  body.mobile #surgebar{font-size:11px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><img src="/logo-mark.png" alt="World Wall logo">WORLD <span>WALL</span></div>
+  <div class="clocks">
+    <div class="clock"><div class="city">VANCOUVER</div><div class="time" data-tz="America/Vancouver">--:--:--</div></div>
+    <div class="clock"><div class="city">TORONTO</div><div class="time" data-tz="America/Toronto">--:--:--</div></div>
+    <div class="clock"><div class="city">NEW YORK</div><div class="time" data-tz="America/New_York">--:--:--</div></div>
+    <div class="clock"><div class="city">SÃO PAULO</div><div class="time" data-tz="America/Sao_Paulo">--:--:--</div></div>
+    <div class="clock"><div class="city">LONDON</div><div class="time" data-tz="Europe/London">--:--:--</div></div>
+    <div class="clock"><div class="city">LAGOS</div><div class="time" data-tz="Africa/Lagos">--:--:--</div></div>
+    <div class="clock"><div class="city">BERLIN</div><div class="time" data-tz="Europe/Berlin">--:--:--</div></div>
+    <div class="clock"><div class="city">DUBAI</div><div class="time" data-tz="Asia/Dubai">--:--:--</div></div>
+    <div class="clock"><div class="city">MUMBAI</div><div class="time" data-tz="Asia/Kolkata">--:--:--</div></div>
+    <div class="clock"><div class="city">SINGAPORE</div><div class="time" data-tz="Asia/Singapore">--:--:--</div></div>
+    <div class="clock"><div class="city">TOKYO</div><div class="time" data-tz="Asia/Tokyo">--:--:--</div></div>
+    <div class="clock"><div class="city">SYDNEY</div><div class="time" data-tz="Australia/Sydney">--:--:--</div></div>
+    <div class="clock"><div class="city">UTC</div><div class="time" data-tz="UTC">--:--:--</div></div>
+  </div>
+  <div class="hdr-right">
+    <div class="livestat" id="liveStat">STREAMS <b>…</b></div>
+    <button id="btnAdd">+ Add stream</button>
+    <button id="btnPresets">Library</button>
+    <button id="btnNight" title="Night watch: dim and mute the wall">🌙 Night</button>
+    <button id="btnReset" class="warn">Reset</button>
+  </div>
+</header>
+<div id="scenebar"><span class="sb-label">DESK</span></div>
+<div id="surgebar"></div>
+
+<main>
+  <section id="wall"></section>
+  <aside id="rail">
+    <h2>SITUATION</h2>
+    <div id="situation"><div class="sit">Loading wires…</div></div>
+    <h2>WIRE — LATEST</h2>
+    <div id="headlines"></div>
+    <div class="addbox">
+      <label style="font-size:10px; letter-spacing:1px; color:var(--dim);">ADD RSS / ATOM FEED</label>
+      <div style="display:flex; gap:6px; margin-top:4px;">
+        <input id="feedUrl" placeholder="https://example.com/feed.xml" style="flex:1; background:#04070b; border:1px solid var(--line); color:var(--txt); padding:6px; font:inherit; font-size:12px;">
+        <button id="btnFeed">Add</button>
+      </div>
+      <div id="feedList" style="margin-top:6px; font-size:11px; color:var(--dim);"></div>
+    </div>
+  </aside>
+</main>
+
+<div id="ticker"><div class="tag">WIRE</div><div id="tickerTrack"></div></div>
+
+<div class="modal" id="addModal">
+  <div class="box">
+    <h3>ADD STREAM</h3>
+    <label>NAME (OPTIONAL)</label>
+    <input id="addName" placeholder="My stream">
+    <label>STREAM ADDRESS</label>
+    <input id="addUrl" placeholder="YouTube watch URL, channel URL, @handle/live, video ID, or .m3u8">
+    <div style="font-size:11px; color:var(--dim); margin-top:8px; line-height:1.5;">
+      Accepts a YouTube video link, a channel link or handle (resolves to whatever is live),
+      a bare video ID, or a direct HLS (.m3u8) address.
+    </div>
+    <div class="row">
+      <button id="addCancel">Cancel</button>
+      <button id="addGo" class="active">Add to wall</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="presetModal">
+  <div class="box">
+    <h3>STREAM LIBRARY — VERIFIED 2026-10-23</h3>
+    <div id="presetList"></div>
+    <div class="row"><button id="presetClose">Close</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
+<script>
+"use strict";
+/* ================= data ================= */
+/* Verified by live embed testing on 2026-10-22 (Phoenix): video-ID embeds play;
+   channel-form embeds fail for most outlets and are only used for event-only ones.
+   World expansion verified the same day: 17 more outlets play by video ID.
+   Outlets whose YouTube embeds are blocked server-side (WION, India Today,
+   ABC News Australia) or that keep no YouTube live (SABC News, i24NEWS English,
+   Sky News Australia, Rai News 24) run on direct HLS instead, playlist and
+   segment tested 2026-10-22. Order is world-first; Canada is in the mix. */
+const PRESETS = [
+  {name:"BBC News",            channel:"UC16niRr50-MSBwiO3YDb3RA", video:"-NabWfv-VdA", region:"Europe", owner:"UK · Public"},
+  {name:"Sky News",            channel:"UCoMdktPbSTixAyNGwb-UYkQ", video:"umLWFz4izTM", region:"Europe", owner:"UK · Private"},
+  {name:"Al Jazeera English",  channel:"UCNye-wNBqNL5ZzHSJj3l8Bg", video:"gCNeDWCI0vo", hls:"https://live-hls-apps-aje-fa.getaj.net/AJE/index.m3u8", region:"Middle East", owner:"Qatar · State"},
+  {name:"DW News English",     channel:"UCknLrEdhRCp1aegoMqRaCZg", video:"LuKwFajn37U", hls:"https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8", region:"Europe", owner:"Germany · Public"},
+  {name:"France 24 English",   channel:"UCQfwfsi5VrQ8yKZ-UWmAEFg", video:"HvZt-nh9sGg", hls:"https://live.france24.com/hls/live/2037218-b/F24_EN_HI_HLS/master_5000.m3u8", region:"Europe", owner:"France · State"},
+  {name:"Euronews English",    channel:"UCSrZ3UV4jOidv8ppoVuvW9Q", video:"pykpO5kQJ98", region:"Europe", owner:"Europe · Private"},
+  {name:"ABC News Live",       channel:"UCBi2mrWuNuyYy4gbM6fU18Q", video:"iipR5yUp36o", region:"Americas", owner:"US · Private"},
+  {name:"NBC News NOW",        channel:"UCeY0bbntWzzVIaj2z3QigXg", video:"xPtxnwQREmE", region:"Americas", owner:"US · Private"},
+  {name:"Bloomberg TV",        channel:"UCIALMKvObZNtJ6AmdCLP7Lg", video:"QB5BNdBFujE", hls:"https://www.bloomberg.com/media-manifest/streams/us.m3u8", region:"Americas", owner:"US · Private"},
+  {name:"CBC News",            channel:"UCuFFtHWoLl5fauMMD5Ww2jA", video:"5vfaDsMhCF4", region:"Canada", owner:"Canada · Public"},
+  {name:"TRT World",           channel:"UC7fWeaHhqgM4Ry-RMpM2YYw", video:"qBe59l6p_EU", region:"Middle East", owner:"Türkiye · State"},
+  {name:"Al Arabiya English",  channel:"UCIZJ9a6P_nxCFJTmL0gh_IQ", video:"7fGD8Ouqu5w", region:"Middle East", owner:"Saudi · State-linked"},
+  {name:"Africanews",          channel:"UC1_E8NeF5QHY2dtdLRBCCLA", video:"NQjabLGdP5g", region:"Africa", owner:"Pan-African · Private"},
+  {name:"Channels Television", channel:"UCEXGDNclvmg6RW0vipJYsTQ", video:"d4zDorDl5UE", region:"Africa", owner:"Nigeria · Private"},
+  {name:"CNA",                 channel:"UC83jt4dlz1Gjl58fzQrrKZg", video:"-PWMxjBgr0k", region:"Asia-Pacific", owner:"Singapore · State-linked"},
+  {name:"NHK World-Japan",     channel:"UCSPEjw8F2nQDtmUKPFNF7_A", video:"IimtbuqYIE8", region:"Asia-Pacific", owner:"Japan · Public"},
+  {name:"NDTV",                channel:"UCZFMm1mMw0F81Z37aaEzTUA", video:"__JFciWYWqI", region:"Asia-Pacific", owner:"India · Private"},
+  {name:"GB News",             channel:"UC0vn8ISa4LKMunLbzaXLnOQ", video:"EDbWwVR7i9Q", region:"Europe", owner:"UK · Private"},
+  {name:"TVP World",           channel:"UCBjUPsHj7bXt24SUWNoZ0zA", video:"tvXWIgsWuK0", region:"Europe", owner:"Poland · Public"},
+  {name:"United24 Media",      channel:"UCX-xHRN9CnoXto5gcPskANA", video:"aOx7U0kptzU", region:"Europe", owner:"Ukraine · State"},
+  {name:"ABC News Australia",  hls:"https://abc-news-dmd-streams-1.akamaized.net/out/v1/701126012d044971b3fa89406a440133/index.m3u8", region:"Asia-Pacific", owner:"Australia · Public"},
+  {name:"Sky News Australia",  hls:"https://skynewsau-live-premium.akamaized.net/hls/live/2105299/skynews/live.m3u8", region:"Asia-Pacific", owner:"Australia · Private"},
+  {name:"Arirang TV",          channel:"UC-PHIZjV-oX8H7zD1cCN2NQ", video:"hvVlyZ5GiE8", region:"Asia-Pacific", owner:"South Korea · State"},
+  {name:"CGTN",                channel:"UCgrNz-aDmcr2uuto8_DL2jg", video:"0i7n3r01L2U", region:"Asia-Pacific", owner:"China · State"},
+  {name:"Global News",         channel:"UChLtXXpo4Ge1ReTEboVvTDg", channelForm:true, region:"Canada", owner:"Canada · Private"},
+  {name:"CTV News",            channel:"UCi7Zk9baY1tvdlgxIML8MXg", channelForm:true, region:"Canada", owner:"Canada · Private"},
+  {name:"NTV Kenya",           channel:"UCqBJ47FjJcl61fmSbcadAVg", video:"PpcDyA3KOeg", region:"Africa", owner:"Kenya · Private"},
+  {name:"JoyNews",             channel:"UChd1DEecCRlxaa0-hvPACCw", video:"ccATCYzS_ys", region:"Africa", owner:"Ghana · Private"},
+  {name:"SABC News",           hls:"https://sabconetanw.cdn.mangomolo.com/news/smil:news.stream.smil/master.m3u8", region:"Africa", owner:"South Africa · Public"},
+  {name:"WION",                hls:"https://vg-zeefta.akamaized.net/ptnr-yupptv/title-wion/v1/master/611d79b11b77e2f571934fd80ca1413453772ac7/20c3c0d9-0256-43fe-bca6-70fdd490b957/main.m3u8", region:"Asia-Pacific", owner:"India · Private"},
+  {name:"India Today",         hls:"https://d1rc86nwwc9fag.cloudfront.net/vglive-sk-293160/master.m3u8", region:"Asia-Pacific", owner:"India · Private"},
+  {name:"i24NEWS English",     hls:"https://i24newsenglish-cdn.encoders.immergo.tv/master.m3u8", region:"Middle East", owner:"Israel · Private"},
+  {name:"Rai News 24",         hls:"https://d3k8wzt41aflvx.cloudfront.net/RAINEWS24/Live.m3u8", region:"Europe", owner:"Italy · Public"},
+  {name:"France 24 French",    channel:"UCCCPCZNChQdGa9EkATeye4g", video:"a47ckXKZjxI", region:"Europe", owner:"France · State"},
+  {name:"France 24 Spanish",   channel:"UCUdOoVWuWmgo1wByzcsyKDQ", video:"zTv0hCakAhg", region:"Europe", owner:"France · State"},
+  {name:"Radio-Canada Info",   channel:"UClxaaAzHu1B5EoTtBYea7ig", channelForm:true, region:"Canada", owner:"Canada · Public"},
+  {name:"ABS-CBN News",        channel:"UCE2606prvXQc_noEqKxVJXA", channelForm:true, region:"Asia-Pacific", owner:"Philippines · Private"},
+  {name:"teleSUR English",     channel:"UCmuTmpLY35O3csvhyA6vrkg", video:"wiY3XhTiQF8", region:"Americas", owner:"Venezuela · State-backed"},
+  {name:"RTVE Noticias", channel:"UC7QZIf0dta-XPXsp9Hv4dTw", region:"Europe", owner:"Spain · Public"},
+  {name:"RTL Nieuws", channel:"UCv4NUJ5BGSpJz_leIfayDzQ", region:"Europe", owner:"Netherlands · Private"},
+  {name:"NOS", channel:"UC5xziMuoFAOpX9mwUVhe2Jw", region:"Europe", owner:"Netherlands · Public"},
+  {name:"VRT NWS", channel:"UC59gT3bFTFNSqafRcluDIsQ", region:"Europe", owner:"Belgium · Public"},
+  {name:"OE24.TV", channel:"UCyQpfuhftLvrmjxgEzVH78Q", region:"Europe", owner:"Austria · Private"},
+  {name:"Hír TV", channel:"UCAvx9uxtvhnxNpnjutUei5A", region:"Europe", owner:"Hungary · Private"},
+  {name:"ATV Magyarország", channel:"UCXxUjsYxbL1llIe9Ra6wcyQ", region:"Europe", owner:"Hungary · Private"},
+  {name:"Antena 3 CNN", channel:"UCw9Hc3CD8hbqP-Y9XOJS--Q", region:"Europe", owner:"Romania · Private"},
+  {name:"N1 Serbia", channel:"UCpglal7d5mhV4lA1b3-DsCw", region:"Europe", owner:"Serbia · Private"},
+  {name:"Top Channel", channel:"UCyny-dfYPbE-CjAkzkZqF8A", region:"Europe", owner:"Albania · Private"},
+  {name:"LRT", channel:"UC4KnMZaxcv1KZDAJsgHXcOA", region:"Europe", owner:"Lithuania · Public"},
+  {name:"NRK Nyheter", channel:"UC8cOr4Lw7rqKhI-chluycVw", region:"Europe", owner:"Norway · Public"},
+  {name:"eXtra News", channel:"UCGyS7uRX_tmdfAgf-4tsUlg", region:"Middle East", owner:"Egypt · Private"},
+  {name:"CBC Egypt", channel:"UCB6sc84dcg6VQGB_d89sx2g", region:"Middle East", owner:"Egypt · Private"},
+  {name:"Sky News Arabia", channel:"UCIJXOvggjKtCagMfxvcCzAA", region:"Middle East", owner:"UAE · Private"},
+  {name:"Asharq News", channel:"UCRJUVYt9gjg8MnlGacySUdg", region:"Middle East", owner:"Saudi · Private"},
+  {name:"Rudaw", channel:"UCAUHoE2Ykw0sguyi5AjhrjQ", region:"Middle East", owner:"Iraq · Private"},
+  {name:"MTV Lebanon News", channel:"UC9_XmAwE5szLHF76FjMylaw", region:"Middle East", owner:"Lebanon · Private"},
+  {name:"Roya News", channel:"UCsDQbVxQjBuFOa98vxRlbVQ", region:"Middle East", owner:"Jordan · Private"},
+  {name:"2M", channel:"UClozwh5URilIQpDFeXch8qw", region:"Africa", owner:"Morocco · State"},
+  {name:"Medi 1 TV", channel:"UCfXlL8avQjg74WbRyksr9bQ", region:"Africa", owner:"Morocco · Private"},
+  {name:"NBS TV Uganda", channel:"UCzv3kGHEZ0fD404GVaW-GPg", region:"Africa", owner:"Uganda · Private"},
+  {name:"Diamond TV Zambia", channel:"UCQbCnOIxLOSNV1ZFdQnPWxg", region:"Africa", owner:"Zambia · Private"},
+  {name:"1News", channel:"UCxPAYgO8OpFev3PUTKbsxNw", region:"Asia-Pacific", owner:"New Zealand · State"},
+  {name:"Geo News", channel:"UC_vt34wimdCzdkrzVejwX9g", region:"Asia-Pacific", owner:"Pakistan · Private"},
+  {name:"ARY News", channel:"UCMmpLL2ucRHAXbNHiCPyIyg", region:"Asia-Pacific", owner:"Pakistan · Private"},
+  {name:"Somoy TV", channel:"UCxHoBXkY88Tb8z1Ssj6CWsQ", region:"Asia-Pacific", owner:"Bangladesh · Private"},
+  {name:"Jamuna TV", channel:"UCN6sm8iHiPd0cnoUardDAnw", region:"Asia-Pacific", owner:"Bangladesh · Private"},
+  {name:"Kompas TV", channel:"UC5BMIWZe9isJXLZZWPWvBlg", region:"Asia-Pacific", owner:"Indonesia · Private"},
+  {name:"tvOne", channel:"UCER4rvDnRBPr_ncYW4UCZjg", region:"Asia-Pacific", owner:"Indonesia · Private"},
+  {name:"Astro Awani", channel:"UC5dYmq91e5_g54krpO06NJw", region:"Asia-Pacific", owner:"Malaysia · Private"},
+  {name:"Thairath News", channel:"UCrFDdD-EE05N7gjwZho2wqw", region:"Asia-Pacific", owner:"Thailand · Private"},
+  {name:"PPTV HD 36", channel:"UC7FCQJFK1sfwD_uobB45Xng", region:"Asia-Pacific", owner:"Thailand · Private"},
+  {name:"SETN", channel:"UCIU8ha-NHmLjtUwU7dFiXUA", region:"Asia-Pacific", owner:"Taiwan · Private"},
+  {name:"FTV News", channel:"UC2VmWn8dAqkzlQqvy02E1PA", region:"Asia-Pacific", owner:"Taiwan · Private"},
+  {name:"RTHK", channel:"UC6of7UYhctnYmqABjUqzuxw", region:"Asia-Pacific", owner:"Hong Kong · Public"},
+  {name:"TVB News", channel:"UC_ifDTtFAcsj-wJ5JfM27CQ", region:"Asia-Pacific", owner:"Hong Kong · Private"},
+  {name:"Newsfirst", channel:"UCgnFSj7jQffD5V5m05j4dPw", region:"Asia-Pacific", owner:"Sri Lanka · Private"},
+  {name:"Khabar 24", channel:"UC8ScGlxwRen1QNWdDagq3ig", region:"Asia-Pacific", owner:"Kazakhstan · State"},
+  {name:"Qazaqstan TV", channel:"UCg7YNHS1ld_LBCupWa1I_AQ", region:"Asia-Pacific", owner:"Kazakhstan · State"},
+  {name:"CNN Brasil", channel:"UCvdwhh_fDyWccR42-rReZLw", region:"Americas", owner:"Brazil · Private"},
+  {name:"Jovem Pan News", channel:"UCP391YRAjSOdM_bwievgaZA", region:"Americas", owner:"Brazil · Private"},
+  {name:"Milenio", channel:"UCFxHplbcoJK9m70c4VyTIxg", region:"Americas", owner:"Mexico · Private"},
+  {name:"Imagen Noticias", channel:"UCcHtke0raf8vNYLM1Hbq3Jw", region:"Americas", owner:"Mexico · Private"},
+  {name:"Todo Noticias", channel:"UCj6PcyLvpnIRT_2W_mwa9Aw", region:"Americas", owner:"Argentina · Private"},
+  {name:"C5N", channel:"UCFgk2Q2mVO1BklRQhSv6p0w", region:"Americas", owner:"Argentina · Private"},
+  {name:"24 Horas TVN", channel:"UCTXNz3gjAypWp3EhlIATEJQ", region:"Americas", owner:"Chile · Public"},
+  {name:"CNN Chile", channel:"UCpOAcjJNAp0Y0fhznRrXIJQ", region:"Americas", owner:"Chile · Private"},
+  {name:"Noticias RCN", channel:"UCnr6pbeXJmkNQJ9PSYle7QQ", region:"Americas", owner:"Colombia · Private"},
+  {name:"Noticias Caracol", channel:"UC2Xq2PK-got3Rtz9ZJ32hLQ", channelForm:true, region:"Americas", owner:"Colombia · Private"},
+  {name:"RPP Noticias", channel:"UC5j8-2FT0ZMMBkmK72R4aeA", region:"Americas", owner:"Peru · Private"},
+  {name:"Latina Noticias", channel:"UCpSJ5fGhmAME9Kx2D3ZvN3Q", region:"Americas", owner:"Peru · Private"},
+  {name:"Ecuavisa", channel:"UCRUV3nUNSc-xpBrTwQOCQQg", region:"Americas", owner:"Ecuador · Private"},
+  {name:"Canal Caribe", channel:"UCOh5dNCZ12K0PD0a2UhY7cw", region:"Americas", owner:"Cuba · State"},
+];
+const AUTHORS = {
+  "UC7QZIf0dta-XPXsp9Hv4dTw": "RTVE Noticias",
+  "UCv4NUJ5BGSpJz_leIfayDzQ": "RTL Nieuws",
+  "UC5xziMuoFAOpX9mwUVhe2Jw": "NOS",
+  "UC59gT3bFTFNSqafRcluDIsQ": "VRT NWS",
+  "UCyQpfuhftLvrmjxgEzVH78Q": "OE24.TV",
+  "UCAvx9uxtvhnxNpnjutUei5A": "Hír TV",
+  "UCXxUjsYxbL1llIe9Ra6wcyQ": "ATV Magyarország",
+  "UCw9Hc3CD8hbqP-Y9XOJS--Q": "Antena 3 CNN",
+  "UCpglal7d5mhV4lA1b3-DsCw": "N1",
+  "UCyny-dfYPbE-CjAkzkZqF8A": "Top Channel Albania",
+  "UC4KnMZaxcv1KZDAJsgHXcOA": "Lietuvos nacionalinis radijas ir televizija",
+  "UC8cOr4Lw7rqKhI-chluycVw": "NRK Nyheter",
+  "UCGyS7uRX_tmdfAgf-4tsUlg": "eXtra news",
+  "UCB6sc84dcg6VQGB_d89sx2g": "CBC Egypt",
+  "UCIJXOvggjKtCagMfxvcCzAA": "سكاي نيوز عربية",
+  "UCRJUVYt9gjg8MnlGacySUdg": "Asharq News - الشرق للأخبار",
+  "UCAUHoE2Ykw0sguyi5AjhrjQ": "Rudaw Media Network",
+  "UC9_XmAwE5szLHF76FjMylaw": "MTV Lebanon News",
+  "UCsDQbVxQjBuFOa98vxRlbVQ": "Roya News",
+  "UClozwh5URilIQpDFeXch8qw": "2MTV",
+  "UCfXlL8avQjg74WbRyksr9bQ": "MEDI1 TV",
+  "UCzv3kGHEZ0fD404GVaW-GPg": "NBS TV Uganda",
+  "UCQbCnOIxLOSNV1ZFdQnPWxg": "Diamond TV Zambia",
+  "UCxPAYgO8OpFev3PUTKbsxNw": "1News",
+  "UC_vt34wimdCzdkrzVejwX9g": "Geo News",
+  "UCMmpLL2ucRHAXbNHiCPyIyg": "ARY News",
+  "UCxHoBXkY88Tb8z1Ssj6CWsQ": "SOMOY TV",
+  "UCN6sm8iHiPd0cnoUardDAnw": "Jamuna TV",
+  "UC5BMIWZe9isJXLZZWPWvBlg": "KOMPASTV",
+  "UCER4rvDnRBPr_ncYW4UCZjg": "tvOneNews",
+  "UC5dYmq91e5_g54krpO06NJw": "Astro AWANI",
+  "UCrFDdD-EE05N7gjwZho2wqw": "Thairath News - ข่าวไทยรัฐ",
+  "UC7FCQJFK1sfwD_uobB45Xng": "PPTV HD 36",
+  "UCIU8ha-NHmLjtUwU7dFiXUA": "三立新聞網SETN",
+  "UC2VmWn8dAqkzlQqvy02E1PA": "民視新聞網 Formosa TV News network",
+  "UC6of7UYhctnYmqABjUqzuxw": "RTHK 香港電台",
+  "UC_ifDTtFAcsj-wJ5JfM27CQ": "TVB NEWS Official 無綫新聞",
+  "UCgnFSj7jQffD5V5m05j4dPw": "Newsfirst Sri Lanka",
+  "UC8ScGlxwRen1QNWdDagq3ig": "Khabar 24 News",
+  "UCg7YNHS1ld_LBCupWa1I_AQ": "Qazaqstan TV / Қазақстан Ұлттық Арнасы",
+  "UCvdwhh_fDyWccR42-rReZLw": "CNN Brasil",
+  "UCP391YRAjSOdM_bwievgaZA": "Jovem Pan News",
+  "UCFxHplbcoJK9m70c4VyTIxg": "MILENIO",
+  "UCcHtke0raf8vNYLM1Hbq3Jw": "Imagen Noticias",
+  "UCj6PcyLvpnIRT_2W_mwa9Aw": "Todo Noticias",
+  "UCFgk2Q2mVO1BklRQhSv6p0w": "C5N",
+  "UCTXNz3gjAypWp3EhlIATEJQ": "24 Horas - TVN Chile",
+  "UCpOAcjJNAp0Y0fhznRrXIJQ": "CNN Chile",
+  "UCnr6pbeXJmkNQJ9PSYle7QQ": "Noticias RCN",
+  "UC2Xq2PK-got3Rtz9ZJ32hLQ": "Noticias Caracol",
+  "UC5j8-2FT0ZMMBkmK72R4aeA": "RPP Noticias",
+  "UCpSJ5fGhmAME9Kx2D3ZvN3Q": "Latina Noticias",
+  "UCRUV3nUNSc-xpBrTwQOCQQg": "Ecuavisa",
+  "UCOh5dNCZ12K0PD0a2UhY7cw": "Canal Caribe",
+  "UCuFFtHWoLl5fauMMD5Ww2jA": "CBC News",
+  "UC16niRr50-MSBwiO3YDb3RA": "BBC News",
+  "UCoMdktPbSTixAyNGwb-UYkQ": "Sky News",
+  "UCNye-wNBqNL5ZzHSJj3l8Bg": "Al Jazeera English",
+  "UCknLrEdhRCp1aegoMqRaCZg": "DW News",
+  "UCQfwfsi5VrQ8yKZ-UWmAEFg": "FRANCE 24 English",
+  "UCBi2mrWuNuyYy4gbM6fU18Q": "ABC News",
+  "UCeY0bbntWzzVIaj2z3QigXg": "NBC News",
+  "UCIALMKvObZNtJ6AmdCLP7Lg": "Bloomberg Television",
+  "UCSrZ3UV4jOidv8ppoVuvW9Q": "euronews",
+  "UChLtXXpo4Ge1ReTEboVvTDg": "Global News",
+  "UCi7Zk9baY1tvdlgxIML8MXg": "CTV News",
+  "UC7fWeaHhqgM4Ry-RMpM2YYw": "TRT World",
+  "UCIZJ9a6P_nxCFJTmL0gh_IQ": "Al Arabiya English",
+  "UC1_E8NeF5QHY2dtdLRBCCLA": "africanews",
+  "UCEXGDNclvmg6RW0vipJYsTQ": "Channels Television",
+  "UC83jt4dlz1Gjl58fzQrrKZg": "CNA",
+  "UCSPEjw8F2nQDtmUKPFNF7_A": "NHK WORLD-JAPAN",
+  "UCZFMm1mMw0F81Z37aaEzTUA": "NDTV",
+  "UC0vn8ISa4LKMunLbzaXLnOQ": "GBNews",
+  "UCBjUPsHj7bXt24SUWNoZ0zA": "TVP WORLD",
+  "UCX-xHRN9CnoXto5gcPskANA": "UNITED24",
+  "UC-PHIZjV-oX8H7zD1cCN2NQ": "Arirang TV",
+  "UCgrNz-aDmcr2uuto8_DL2jg": "CGTN",
+  "UCqBJ47FjJcl61fmSbcadAVg": "NTV Kenya",
+  "UChd1DEecCRlxaa0-hvPACCw": "JoyNews",
+  "UCCCPCZNChQdGa9EkATeye4g": "FRANCE 24",
+  "UCUdOoVWuWmgo1wByzcsyKDQ": "FRANCE 24 Español",
+  "UClxaaAzHu1B5EoTtBYea7ig": "Radio-Canada Info",
+  "UCE2606prvXQc_noEqKxVJXA": "ABS-CBN News",
+  "UCmuTmpLY35O3csvhyA6vrkg": "TeleSUR English"
+};
+const LS_KEY = "ncc-state-v5";
+let uid = 1;
+function mkTile(p){ return {id: uid++, name:p.name, channel:p.channel||null, video:p.video||null,
+  hls:p.hls||null, channelForm:!!p.channelForm, src: p.hls && !p.video ? "hls" : "yt", live:null,
+  region: p.region || "", owner: p.owner || "",
+  author: AUTHORS[p.channel] || "", prevVideo:null, pendingAuthorCheck:false, resolveLocked:false}; }
+
+let state = loadState();
+function loadState(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){ const s = JSON.parse(raw); s.tiles.forEach(t=>{ t.id = uid++; if(!t.author) t.author = AUTHORS[t.channel] || "";
+      const p = PRESETS.find(x=>x.name === t.name); if(p){ if(!t.region) t.region = p.region || ""; if(!t.owner) t.owner = p.owner || ""; } });
+      if(!s.pages || typeof s.pages !== "object") s.pages = {}; s.rotate = !!s.rotate; return s; }
+  }catch(e){}
+  return { layout:"c3", tiles: PRESETS.map(mkTile), feeds: [], scene: "All", pages: {}, rotate: false };
+}
+function saveState(){
+  const s = { layout: state.layout, feeds: state.feeds, scene: state.scene || "All", pages: state.pages || {}, rotate: !!state.rotate,
+    tiles: state.tiles.map(t=>({name:t.name, channel:t.channel, video:t.video, hls:t.hls, channelForm:t.channelForm, src:t.src, region:t.region || "", owner:t.owner || ""})) };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(s)); }catch(e){}
+}
+</script>
+<script>
+/* ================= wall ================= */
+const wall = document.getElementById("wall");
+/* Mobile mode (narrow screens): the 38-player grid becomes a scrollable
+   list of full-width tiles and only one stream plays at a time, started by
+   a tap or by scrolling the tile into view (scroll autoplay, below). A
+   phone cannot carry 38 live players; this keeps the wall usable and the
+   data bill sane. Desktop rendering is untouched. */
+const MQ = window.matchMedia ? window.matchMedia("(max-width: 900px)") : { matches:false };
+function isMobile(){ return !!MQ.matches; }
+let mobileActiveId = null;
+function mobilePlate(t, label){
+  const sc = document.querySelector('.tile[data-id="'+t.id+'"] .screen');
+  if(!sc) return;
+  setLive(t, false);
+  sc.innerHTML = '<div class="plate"><div class="playcta">\u25B6</div><div class="big">'+esc(t.name.toUpperCase())+'</div><div>'+esc(label || "TAP TO PLAY")+'</div></div>';
+  sc.onclick = ()=>{ sc.onclick = null; mountTile(t); };
+}
+const players = {};   // tileId -> YT.Player
+const hlsObjs = {};   // tileId -> Hls instance
+let ytReady = false, ytWaiters = [];
+(function loadYT(){
+  const s = document.createElement("script");
+  s.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(s);
+})();
+window.onYouTubeIframeAPIReady = function(){ ytReady = true; ytWaiters.splice(0).forEach(f=>f()); };
+function whenYT(f){ ytReady ? f() : ytWaiters.push(f); }
+
+function setLive(t, on){
+  t.live = on;
+  const d = document.querySelector('.tile[data-id="'+t.id+'"] .dot');
+  if(d){ d.className = "dot" + (on ? " live" : " off"); }
+  updateLiveStat();
+}
+const SCENES = ["All", "Europe", "Middle East", "Africa", "Asia-Pacific", "Americas", "Canada"];
+function visibleTiles(){
+  return (!state.scene || state.scene === "All") ? state.tiles : state.tiles.filter(t=>t.region === state.scene);
+}
+/* Desktop paging: the wall shows one page of the scene's tiles; only that
+   page's players exist. Page size is the largest of PAGE_SIZES whose grid
+   keeps each picture at least max(260px, 14% of viewport width) wide.
+   Mobile is never paged: it lists every scene tile, as before. */
+const PAGE_SIZES = [30, 24, 20, 16, 12];
+function bestCols(n, W, H){
+  let best = 1, bestScore = -Infinity, bestEff = 0;
+  for(let cols = 1; cols <= n; cols++){
+    const rows = Math.ceil(n/cols);
+    const cw = W/cols, ch = H/rows;
+    const effW = Math.min(cw, ch*16/9);
+    const score = effW - (cols*rows - n)*8;
+    if(score > bestScore){ bestScore = score; best = cols; }
+  }
+  const rows = Math.ceil(n/best);
+  /* usable picture width once the 6px gap and the tile's title bar are taken out */
+  bestEff = Math.min(W/best - 6, (H/rows - 6 - 24)*16/9);
+  return { cols: best, rows, eff: bestEff };
+}
+function pageSize(){
+  if(!wall.clientWidth || !wall.clientHeight) return 12;
+  const W = wall.clientWidth - 12, H = wall.clientHeight - 12;
+  const minW = Math.max(260, window.innerWidth*0.14);
+  for(const n of PAGE_SIZES){ if(bestCols(n, W, H).eff >= minW) return n; }
+  return 12;
+}
+let curPageSize = 12;
+function pageCount(){ return Math.max(1, Math.ceil(visibleTiles().length / curPageSize)); }
+function curPage(){
+  if(!state.pages) state.pages = {};
+  const p = state.pages[state.scene || "All"] | 0;
+  return Math.min(Math.max(p, 0), pageCount() - 1);
+}
+function pageTiles(){
+  const vis = visibleTiles();
+  if(isMobile()) return vis;
+  const p = curPage();
+  return vis.slice(p*curPageSize, (p+1)*curPageSize);
+}
+function pageOfTile(t){
+  const i = visibleTiles().indexOf(t);
+  return i < 0 ? -1 : Math.floor(i / curPageSize);
+}
+function goToPage(p){
+  const n = pageCount();
+  p = ((p % n) + n) % n;
+  if(!state.pages) state.pages = {};
+  if(p === curPage() && wall.children.length){ renderPager(); return; }
+  state.pages[state.scene || "All"] = p;
+  saveState();
+  rotateElapsed = 0;
+  renderWall();
+}
+function renderPager(){
+  const pg = document.getElementById("pager");
+  if(!pg) return;
+  const n = pageCount(), p = curPage();
+  pg.innerHTML = "";
+  const mk = (label, title, fn, cls)=>{
+    const b = document.createElement("button");
+    b.textContent = label; b.title = title; b.onclick = fn; if(cls) b.className = cls;
+    pg.appendChild(b); return b;
+  };
+  mk("\u25C0 Prev", "Previous page (\u2190)", ()=> goToPage(curPage() - 1));
+  for(let i = 0; i < n; i++){
+    const b = mk(String(i+1), "Page "+(i+1), ()=> goToPage(i), "pg-dot" + (i === p ? " active" : ""));
+    if(i === p) b.setAttribute("aria-current", "page");
+  }
+  const info = document.createElement("span");
+  info.className = "pg-info";
+  info.textContent = "PAGE " + (p+1) + " OF " + n;
+  pg.appendChild(info);
+  mk("Next \u25B6", "Next page (\u2192)", ()=> goToPage(curPage() + 1));
+}
+/* Auto-rotate: one page every 45s of unpaused time. Paused while any tile
+   is audible, while the pointer is on the wall controls, or while keyboard focus
+   sits in the wall, scene bar or surge bar; it resumes when that ends. */
+const ROTATE_SECS = 45;
+let rotateElapsed = 0;
+function rotatePaused(){
+  if(isMobile() || focusedEl) return true;
+  const ae = document.activeElement;
+  for(const id of ["wall", "scenebar", "surgebar"]){
+    const el = document.getElementById(id);
+    if(el && ae && ae !== document.body && el.contains(ae)) return true;
+  }
+  if(document.querySelector("#scenebar:hover, #surgebar:hover, #wall .tile .bar:hover")) return true;
+  return pageTiles().some(t=> playerAudible(t));
+}
+setInterval(()=>{
+  if(!state.rotate || pageCount() < 2 || rotatePaused()) return;
+  if(++rotateElapsed >= ROTATE_SECS){ rotateElapsed = 0; goToPage(curPage() + 1); }
+}, 1000);
+document.addEventListener("keydown", e=>{
+  if(isMobile() || e.altKey || e.ctrlKey || e.metaKey) return;
+  if(e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+  const tag = (e.target && e.target.tagName) || "";
+  if(/^(INPUT|TEXTAREA|SELECT)$/.test(tag) || (e.target && e.target.isContentEditable)) return;
+  if(document.querySelector(".modal.open") || focusedEl) return;
+  e.preventDefault();
+  goToPage(curPage() + (e.key === "ArrowRight" ? 1 : -1));
+});
+function updateLiveStat(){
+  const vis = visibleTiles();
+  const n = vis.filter(t=>t.live).length;
+  document.getElementById("liveStat").innerHTML = "STREAMS <b>"+n+" / "+vis.length+" LIVE</b>";
+}
+function setStall(t, on){
+  const el = document.querySelector('.tile[data-id="'+t.id+'"]');
+  if(el) el.classList.toggle("stalled", on);
+  const b = document.querySelector('.tile[data-id="'+t.id+'"] .stallbadge');
+  if(b) b.style.display = on ? "" : "none";
+}
+
+function tileEl(t){
+  const el = document.createElement("div");
+  el.className = "tile"; el.dataset.id = t.id;
+  const srcBadge = t.hls ? '<button data-act="src" title="Switch source">'+(t.src==="hls"?"HLS":"YT")+'</button>' : "";
+  el.innerHTML =
+    '<div class="bar"><span class="dot off"></span><span class="name">'+esc(t.name)+'</span>' +
+    (t.owner ? '<span class="owner">'+esc(t.owner.toUpperCase())+'</span>' : "") +
+    '<span class="badge">'+(t.channelForm ? "EVENTS" : "LIVE")+'</span>' +
+    '<span class="stallbadge" style="display:none">STALLED</span><span class="sp"></span>' +
+    srcBadge +
+    '<button data-act="audio" title="Sound on this tile only">🔊</button>' +
+    '<button data-act="focus" title="Focus">⛶</button>' +
+    '<button data-act="rm" class="warn" title="Remove">✕</button></div>' +
+    '<div class="screen"></div>';
+  el.querySelector('[data-act="rm"]').onclick = ()=>{ removeTile(t); };
+  el.querySelector('[data-act="focus"]').onclick = ()=>{ focusTile(t, el); };
+  el.querySelector('[data-act="audio"]').onclick = ()=>{ audioTile(t); };
+  const sb = el.querySelector('[data-act="src"]');
+  if(sb) sb.onclick = ()=>{ t.src = (t.src==="hls" ? "yt" : "hls"); saveState(); mountTile(t); sb.textContent = t.src==="hls"?"HLS":"YT"; };
+  return el;
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function plate(t, msg, link){
+  t.plated = true;
+  const sc = document.querySelector('.tile[data-id="'+t.id+'"] .screen');
+  if(!sc) return;
+  sc.innerHTML = '<div class="plate"><div class="big">'+esc(t.name.toUpperCase())+'</div><div>'+esc(msg)+'</div>' +
+    (link ? '<a href="'+link+'" target="_blank" rel="noopener">OPEN ON YOUTUBE ↗</a>' : "") +
+    '<button onclick="retryTile('+t.id+')">RETRY</button></div>';
+  setLive(t, false);
+}
+window.retryTile = function(id){ const t = state.tiles.find(x=>x.id===id); if(t) mountTile(t); };
+
+function mountTile(t){
+  const sc = document.querySelector('.tile[data-id="'+t.id+'"] .screen');
+  if(!sc) return;
+  if(isMobile()){
+    if(mobileActiveId && mobileActiveId !== t.id){
+      const prev = state.tiles.find(x=>x.id===mobileActiveId);
+      if(prev){ destroyScreen(prev); mobilePlate(prev); }
+    }
+    mobileActiveId = t.id;
+  }
+  destroyScreen(t);
+  t.plated = false; t.mountTime = Date.now(); t.lastProgress = 0; setStall(t, false);
+  if(t.src === "hls" && t.hls){ mountHLS(t, sc); return; }
+  const vid = t.video;
+  if(!vid && t.channelForm){
+    plate(t, "No live stream at the moment. The next scheduled event will appear here.",
+      "https://www.youtube.com/channel/"+t.channel+"/live");
+    return;
+  }
+  if(!vid){ plate(t, "No stream configured for this tile.", null); return; }
+  const mount = document.createElement("div");
+  mount.id = "yt-" + t.id + "-" + Date.now();
+  sc.innerHTML = ""; sc.appendChild(mount);
+  whenYT(()=>{
+    const opts = {
+      width:"100%", height:"100%",
+      playerVars:{autoplay:1, mute:1, playsinline:1, rel:0, modestbranding:1},
+      events:{
+        onReady: e=>{ e.target.mute(); e.target.playVideo(); },
+        onStateChange: e=>{
+          if(e.data !== YT.PlayerState.PLAYING) return;
+          t.lastProgress = Date.now(); setStall(t, false);
+          if(t.pendingAuthorCheck){
+            t.pendingAuthorCheck = false;
+            const au = (e.target.getVideoData && e.target.getVideoData().author) || "";
+            if(t.author && au && !authorMatch(au, t.author)){
+              t.resolveLocked = true;
+              if(t.prevVideo){ t.video = t.prevVideo; saveState(); mountTile(t); }
+              return;
+            }
+          }
+          setLive(t, true);
+        },
+        onError: ()=>{ onYtError(t); }
+      }
+    };
+    opts.videoId = vid;
+    players[t.id] = new YT.Player(mount.id, opts);
+  });
+}
+function onYtError(t){
+  if(t.hls && t.src !== "hls"){ t.src = "hls"; saveState(); mountTile(t); return; }
+  plate(t, "This stream will not play embedded.", t.channel ? "https://www.youtube.com/channel/"+t.channel+"/live" : null);
+}
+function mountHLS(t, sc){
+  sc.innerHTML = "";
+  const v = document.createElement("video");
+  v.muted = true; v.autoplay = true; v.playsInline = true; v.controls = false;
+  sc.appendChild(v);
+  const ok = ()=> setLive(t, true);
+  v.addEventListener("playing", ok);
+  v.addEventListener("timeupdate", ()=>{ t.lastProgress = Date.now(); setStall(t, false); });
+  if(window.Hls && Hls.isSupported()){
+    const h = new Hls({liveSyncDurationCount:3, maxLiveSyncPlaybackRate:1.5});
+    h.loadSource(t.hls); h.attachMedia(v);
+    h.on(Hls.Events.ERROR, (ev, data)=>{ if(data && data.fatal) plate(t, "HLS stream failed to load.", null); });
+    hlsObjs[t.id] = h;
+  } else if(v.canPlayType("application/vnd.apple.mpegurl")){
+    v.src = t.hls;
+  } else {
+    plate(t, "HLS is not supported in this browser.", null);
+    return;
+  }
+  v.play().catch(()=>{});
+}
+function destroyScreen(t){
+  if(players[t.id]){ try{ players[t.id].destroy(); }catch(e){} delete players[t.id]; }
+  if(hlsObjs[t.id]){ try{ hlsObjs[t.id].destroy(); }catch(e){} delete hlsObjs[t.id]; }
+}
+function removeTile(t){
+  destroyScreen(t);
+  const el = document.querySelector('.tile[data-id="'+t.id+'"]');
+  if(el) el.remove();
+  state.tiles = state.tiles.filter(x=>x.id !== t.id);
+  saveState(); updateLiveStat(); fitGrid(); renderPager();
+}
+function playerAudible(t){
+  if(players[t.id] && players[t.id].isMuted){ try{ return players[t.id].isMuted() === false; }catch(e){ return false; } }
+  const v = document.querySelector('.tile[data-id="'+t.id+'"] video');
+  return !!v && !v.muted;
+}
+/* Listen to first report: put the wall's sound on the outlet that filed
+   the first report of the surging story, muting everything else. On
+   mobile the target tile usually is not mounted (one stream at a time),
+   and on desktop it may be plated, so mount it, scroll it into view on
+   mobile, and keep retrying the unmute until the player actually exists
+   and reports itself audible. Falls back across the surge's sources when
+   the first source has no tile. */
+function listenToFirstReport(s, btn){
+  const t = surgeTargetTile(s);
+  if(t && !isMobile()){
+    const pg = pageOfTile(t);
+    if(pg >= 0 && pg !== curPage()) goToPage(pg);
+  }
+  if(!t){
+    if(btn){ const old = btn.textContent; btn.textContent = "No live tile for this story"; setTimeout(()=>{ btn.textContent = old; }, 2500); }
+    return;
+  }
+  const el = document.querySelector('.tile[data-id="'+t.id+'"]');
+  const mounted = !!(players[t.id] || (el && el.querySelector(".screen video")));
+  if(!mounted || t.plated) mountTile(t);
+  if(isMobile() && el) el.scrollIntoView({ block:"center", behavior:"smooth" });
+  let tries = 0;
+  const iv = setInterval(()=>{
+    tries++;
+    if(!isMobile() || mobileActiveId === t.id) audioTile(t);
+    if(playerAudible(t) || tries > 14) clearInterval(iv);
+  }, 300);
+}
+function audioTile(t){
+  state.tiles.forEach(o=>{
+    if(o.id === t.id) return;
+    if(players[o.id]){ try{ players[o.id].mute(); }catch(e){} }
+    const v = document.querySelector('.tile[data-id="'+o.id+'"] video');
+    if(v) v.muted = true;
+  });
+  if(players[t.id]){ try{ players[t.id].unMute(); players[t.id].setVolume(80); }catch(e){} }
+  const v = document.querySelector('.tile[data-id="'+t.id+'"] video');
+  if(v){ v.muted = false; v.volume = 0.8; }
+}
+let focusedEl = null;
+function focusTile(t, el){
+  if(focusedEl === el){ el.classList.remove("focused"); el.style.cssText = ""; focusedEl = null; return; }
+  if(focusedEl){ focusedEl.classList.remove("focused"); focusedEl.style.cssText = ""; }
+  focusedEl = el;
+  el.classList.add("focused");
+  el.style.cssText = "position:fixed; inset:44px 16px 40px 16px; z-index:40; background:var(--panel);";
+  el.querySelector(".screen").style.aspectRatio = "auto";
+  el.querySelector(".screen").style.flex = "1";
+  audioTile(t);
+}
+function renderScenes(){
+  const bar = document.getElementById("scenebar");
+  bar.innerHTML = '<span class="sb-label">DESK</span>';
+  SCENES.forEach(name=>{
+    const b = document.createElement("button");
+    b.textContent = name;
+    if((state.scene || "All") === name) b.className = "active";
+    b.onclick = ()=>{ state.scene = name; if(!state.pages) state.pages = {}; state.pages[name] = 0; rotateElapsed = 0; saveState(); renderScenes(); renderWall(); };
+    bar.appendChild(b);
+  });
+  const rot = document.createElement("button");
+  rot.className = "rot" + (state.rotate ? " active" : "");
+  rot.textContent = "\u21BB Rotate";
+  rot.title = "Advance a page every " + ROTATE_SECS + "s (pauses while listening or using the wall)";
+  rot.setAttribute("aria-pressed", state.rotate ? "true" : "false");
+  rot.onclick = ()=>{ state.rotate = !state.rotate; rotateElapsed = 0; saveState(); renderScenes(); };
+  bar.appendChild(rot);
+  const pg = document.createElement("div");
+  pg.className = "pager"; pg.id = "pager";
+  bar.appendChild(pg);
+  renderPager();
+}
+function renderWall(){
+  state.tiles.forEach(t=> destroyScreen(t));
+  wall.innerHTML = "";
+  mobileActiveId = null;
+  if(!isMobile()){ fitGrid(); curPageSize = pageSize(); }
+  const vis = pageTiles();
+  const on = new Set(vis.map(t=>t.id));
+  state.tiles.forEach(t=>{ if(!on.has(t.id)){ t.live = false; t.mountTime = 0; t.lastCt = undefined; t.recoveries = 0; } });
+  vis.forEach(t=>{ wall.appendChild(tileEl(t)); });
+  if(isMobile()){ vis.forEach(t=> mobilePlate(t)); }
+  else { vis.forEach(t=> mountTile(t)); }
+  updateLiveStat();
+  fitGrid();
+  setupMobileAutoplay();
+  renderPager();
+  if(window.renderSurge && lastSurges.length) renderSurge();
+}
+/* Mobile scroll autoplay: as the list scrolls, the tile that fills the
+   view becomes the active stream. An IntersectionObserver on the wall
+   (the mobile scroll container) tracks each tile's visible ratio; the
+   most-visible tile at 55% or more wins. A 220ms settle delay keeps a
+   fast fling from mounting and discarding players it merely passes.
+   Between tiles, when nothing reaches 55%, the current stream keeps
+   playing. Tapping a plate still activates that tile immediately. */
+let mobileObserver = null;
+const mobileRatios = new Map();
+let mobileSwitchTimer = null;
+function pickMobileWinner(){
+  /* Most visible tile wins; near-ties (two tiles fully in view) go to the
+     one closest to the top of the wall, which is the one just scrolled to. */
+  let bestId = null, bestRatio = 0, bestDist = Infinity;
+  mobileRatios.forEach((e, id)=>{
+    if(e.r > bestRatio + 0.02 || (Math.abs(e.r - bestRatio) <= 0.02 && e.d < bestDist)){
+      bestRatio = e.r; bestDist = e.d; bestId = id;
+    }
+  });
+  if(mobileSwitchTimer){ clearTimeout(mobileSwitchTimer); mobileSwitchTimer = null; }
+  if(bestId === null || bestRatio < 0.55 || bestId === mobileActiveId) return;
+  const winnerId = bestId;
+  mobileSwitchTimer = setTimeout(()=>{
+    mobileSwitchTimer = null;
+    if(mobileActiveId === winnerId) return;
+    const t = state.tiles.find(x=>x.id === winnerId);
+    if(t) mountTile(t);
+  }, 220);
+}
+function setupMobileAutoplay(){
+  if(mobileObserver){ mobileObserver.disconnect(); mobileObserver = null; }
+  mobileRatios.clear();
+  if(mobileSwitchTimer){ clearTimeout(mobileSwitchTimer); mobileSwitchTimer = null; }
+  if(!isMobile() || !("IntersectionObserver" in window)) return;
+  mobileObserver = new IntersectionObserver(entries=>{
+    entries.forEach(en=>{
+      const id = Number(en.target.dataset.id);
+      if(en.isIntersecting){
+        const rootTop = en.rootBounds ? en.rootBounds.top : 0;
+        mobileRatios.set(id, { r: en.intersectionRatio, d: Math.abs(en.boundingClientRect.top - rootTop) });
+      }
+      else mobileRatios.delete(id);
+    });
+    pickMobileWinner();
+  }, { root: wall, threshold: [0, 0.25, 0.5, 0.55, 0.65, 0.8, 1] });
+  wall.querySelectorAll(".tile").forEach(el=> mobileObserver.observe(el));
+}
+/* layout: auto-fit. The grid always fills the viewport exactly, however
+   many tiles there are: pick the column count that gives the largest
+   effective 16:9 picture, with a small penalty per empty cell. */
+function fitGrid(){
+  if(isMobile()){ wall.style.gridTemplateColumns = ""; wall.style.gridTemplateRows = ""; return; }
+  const n = Math.min(visibleTiles().length, curPageSize);
+  if(!n || !wall.clientWidth || !wall.clientHeight) return;
+  const W = wall.clientWidth - 12, H = wall.clientHeight - 12, target = 16/9;
+  let bestCols = 1, bestScore = -Infinity;
+  for(let cols = 1; cols <= n; cols++){
+    const rows = Math.ceil(n/cols);
+    const cw = W/cols, ch = H/rows;
+    const effW = Math.min(cw, ch*target);
+    const score = effW - (cols*rows - n)*8;
+    if(score > bestScore){ bestScore = score; bestCols = cols; }
+  }
+  wall.style.gridTemplateColumns = "repeat("+bestCols+",1fr)";
+  wall.style.gridTemplateRows = "repeat("+Math.ceil(n/bestCols)+",1fr)";
+}
+let resizeTimer = null;
+window.addEventListener("resize", ()=>{
+  fitGrid();
+  if(isMobile()) return;
+  if(resizeTimer) clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(()=>{ if(!isMobile() && pageSize() !== curPageSize) renderWall(); }, 300);
+});
+/* ================= resolver ================= */
+function authorMatch(a, b){
+  const na = (a || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const nb = (b || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+  return !na || !nb || na.includes(nb) || nb.includes(na);
+}
+async function resolveTile(t){
+  if(!t.channel || t.resolveLocked) return;
+  try{
+    const qs = "/api/resolve?c=" + encodeURIComponent(t.channel) +
+      (t.video ? "&cur=" + encodeURIComponent(t.video) : "") +
+      (t.author ? "&a=" + encodeURIComponent(t.author) : "");
+    const r = await fetch(qs);
+    if(!r.ok) return;
+    const d = await r.json();
+    if(d && d.videoId && d.isLive && (t.channelForm || d.videoId !== t.video)){
+      t.prevVideo = t.video || null;
+      t.video = d.videoId; t.channelForm = false; t.isUpcoming = false;
+      t.pendingAuthorCheck = !!t.author;
+      saveState();
+      if(t.src !== "hls" && (!isMobile() || mobileActiveId === t.id)) mountTile(t);
+      /* the LIVE dot is set by the player itself when it reaches PLAYING,
+         never on the resolver's word alone */
+    }
+    else if(d && !d.isLive && d.upcoming && t.channelForm && t.video !== d.upcoming.videoId){
+      /* event-only channel with a scheduled event: embed the event video
+         itself (shows YouTube's countdown slate, goes live on its own) */
+      t.video = d.upcoming.videoId; t.isUpcoming = true;
+      saveState();
+      if(t.src !== "hls" && (!isMobile() || mobileActiveId === t.id)) mountTile(t);
+    }
+    else if(d && !d.isLive && !d.upcoming && t.channelForm && !t.video){
+      if(isMobile() && mobileActiveId !== t.id) mobilePlate(t, "NO LIVE EVENT SCHEDULED");
+      else plate(t, "No live or scheduled stream right now.",
+        "https://www.youtube.com/channel/"+t.channel+"/live");
+    }
+  }catch(e){}
+}
+function resolveAll(){ state.tiles.forEach((t,i)=> setTimeout(()=>resolveTile(t), i*400)); }
+setInterval(resolveAll, 30*60*1000);
+</script>
+<script>
+/* ================= clocks ================= */
+function tickClocks(){
+  document.querySelectorAll(".clock .time").forEach(el=>{
+    try{
+      el.textContent = new Intl.DateTimeFormat("en-GB",{timeZone:el.dataset.tz, hour12:false,
+        hour:"2-digit", minute:"2-digit", second:"2-digit"}).format(new Date());
+    }catch(e){}
+  });
+}
+setInterval(tickClocks, 1000); tickClocks();
+
+/* ================= wire / intel ================= */
+function age(ts){
+  if(!ts) return "";
+  const m = Math.max(0, Math.round((Date.now()-ts)/60000));
+  if(m < 1) return "now";
+  if(m < 60) return m + "m";
+  const h = Math.floor(m/60);
+  return h < 24 ? h + "h" + String(m%60).padStart(2,"0") : Math.floor(h/24) + "d";
+}
+let wireItems = [];
+let lastSurges = [];
+async function fetchFeeds(){
+  const all = [];
+  try{
+    const r = await fetch("/api/feeds");
+    if(r.ok){ const d = await r.json(); (d.items||[]).forEach(i=>all.push(i)); lastSurges = d.surges || []; }
+  }catch(e){}
+  for(const u of state.feeds){
+    try{
+      const r = await fetch("/api/feeds?u=" + encodeURIComponent(u));
+      if(r.ok){ const d = await r.json(); (d.items||[]).forEach(i=>all.push(i)); }
+    }catch(e){}
+  }
+  const seen = new Set();
+  wireItems = all.filter(i=>{ const k = i.title+"|"+i.source; if(seen.has(k)) return false; seen.add(k); return true; })
+                 .sort((a,b)=>(b.ts||0)-(a.ts||0));
+  renderWire();
+}
+function renderWire(){
+  const sit = document.getElementById("situation");
+  const hl = document.getElementById("headlines");
+  if(!wireItems.length){ sit.innerHTML = '<div class="sit">No wire items yet.</div>'; hl.innerHTML = ""; return; }
+  sit.innerHTML = wireItems.slice(0,5).map(i=>
+    '<div class="sit"><b>'+esc(i.source.toUpperCase())+" · "+age(i.ts)+'</b>'+esc(i.title)+'</div>').join("");
+  hl.innerHTML = wireItems.slice(0,60).map(i=>
+    '<div class="hl"><a href="'+esc(i.link)+'" target="_blank" rel="noopener">'+esc(i.title)+'</a>' +
+    '<div class="meta"><b>'+esc(i.source.toUpperCase())+'</b> · '+age(i.ts)+'</div></div>').join("");
+  const titles = wireItems.slice(0,30).map(i=>"<span><i>▸</i>"+esc(i.title)+"</span>").join("");
+  document.getElementById("tickerTrack").innerHTML = titles + titles;
+  renderFeedList();
+  if(window.renderSurge) renderSurge();
+}
+function renderFeedList(){
+  const el = document.getElementById("feedList");
+  let h = "Built-in: 14 wire feeds" + (state.feeds.length ? " · Custom:" : "");
+  state.feeds.forEach((u,i)=>{ h += '<div style="display:flex; justify-content:space-between; gap:6px; padding:2px 0;"><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">'+esc(u)+'</span><button data-feed-rm="'+i+'">✕</button></div>'; });
+  el.innerHTML = h;
+  el.querySelectorAll("[data-feed-rm]").forEach(b=> b.onclick = ()=>{
+    state.feeds.splice(Number(b.dataset.feedRm),1); saveState(); renderFeedList(); fetchFeeds();
+  });
+}
+document.getElementById("btnFeed").onclick = ()=>{
+  const inp = document.getElementById("feedUrl");
+  const u = inp.value.trim();
+  if(!/^https?:\/\//i.test(u)) return;
+  if(!state.feeds.includes(u)) state.feeds.push(u);
+  inp.value = ""; saveState(); renderFeedList(); fetchFeeds();
+};
+setInterval(fetchFeeds, 5*60*1000);
+
+/* ================= add stream ================= */
+const addModal = document.getElementById("addModal");
+document.getElementById("btnAdd").onclick = ()=> addModal.classList.add("open");
+document.getElementById("addCancel").onclick = ()=> addModal.classList.remove("open");
+async function parseStreamInput(raw){
+  const s = raw.trim();
+  if(/\.m3u8($|\?)/i.test(s)) return {hls:s};
+  let m = s.match(/[?&]v=([A-Za-z0-9_-]{11})/) || s.match(/youtu\.be\/([A-Za-z0-9_-]{11})/) ||
+          s.match(/\/embed\/([A-Za-z0-9_-]{11})/) || s.match(/\/shorts\/([A-Za-z0-9_-]{11})/);
+  if(m) return {video:m[1]};
+  m = s.match(/live_stream\?channel=(UC[A-Za-z0-9_-]{22})/) || s.match(/\/channel\/(UC[A-Za-z0-9_-]{22})/) ||
+      s.match(/^(UC[A-Za-z0-9_-]{22})$/);
+  if(m) return {channel:m[1], channelForm:true};
+  m = s.match(/youtube\.com\/(@[A-Za-z0-9_.-]+)/) || s.match(/^(@[A-Za-z0-9_.-]+)$/);
+  if(m){
+    const r = await fetch("/api/resolve?c=" + encodeURIComponent(m[1]));
+    if(r.ok){ const d = await r.json();
+      if(d.channelId) return {channel:d.channelId, video:d.videoId || null, channelForm: !d.videoId};
+    }
+    return null;
+  }
+  if(/^[A-Za-z0-9_-]{11}$/.test(s)) return {video:s};
+  return null;
+}
+document.getElementById("addGo").onclick = async ()=>{
+  const urlIn = document.getElementById("addUrl");
+  const nameIn = document.getElementById("addName");
+  const parsed = await parseStreamInput(urlIn.value);
+  if(!parsed){ urlIn.style.borderColor = "var(--red)"; return; }
+  const t = mkTile({name: nameIn.value.trim() || parsed.name || "Custom stream",
+    channel: parsed.channel || null, video: parsed.video || null,
+    hls: parsed.hls || null, channelForm: !!parsed.channelForm});
+  if(parsed.hls) t.src = "hls";
+  state.tiles.push(t); state.scene = "All"; saveState();
+  renderScenes(); renderWall();
+  if(t.channel) resolveTile(t);
+  urlIn.value = ""; nameIn.value = ""; urlIn.style.borderColor = "";
+  addModal.classList.remove("open");
+};
+
+/* ================= library ================= */
+const presetModal = document.getElementById("presetModal");
+document.getElementById("btnPresets").onclick = ()=>{
+  const list = document.getElementById("presetList");
+  list.innerHTML = "";
+  PRESETS.forEach(p=>{
+    const onWall = state.tiles.some(t=>t.channel === p.channel && p.channel);
+    const row = document.createElement("div");
+    row.className = "preset";
+    row.innerHTML = "<span>"+esc(p.name)+(p.hls ? ' <span class="badge">HLS ALT</span>' : "")+(p.channelForm ? ' <span class="badge">EVENTS ONLY</span>' : "")+"</span>";
+    const b = document.createElement("button");
+    b.textContent = onWall ? "On wall" : "Add";
+    b.disabled = onWall;
+    b.onclick = ()=>{
+      const t = mkTile(p); state.tiles.push(t); state.scene = "All"; saveState();
+      renderScenes(); renderWall(); resolveTile(t);
+      b.textContent = "On wall"; b.disabled = true;
+    };
+    row.appendChild(b); list.appendChild(row);
+  });
+  presetModal.classList.add("open");
+};
+document.getElementById("presetClose").onclick = ()=> presetModal.classList.remove("open");
+document.addEventListener("keydown", e=>{ if(e.key === "Escape" && focusedEl){ focusedEl.classList.remove("focused"); focusedEl.style.cssText=""; focusedEl.querySelector(".screen").style.cssText=""; focusedEl = null; } });
+
+/* ================= surge / night watch / dead-air watchdog ================= */
+function tileForSource(src){
+  const n = (src || "").toLowerCase();
+  if(!n) return null;
+  return state.tiles.find(t=>{
+    const tn = t.name.toLowerCase();
+    return tn.includes(n) || n.includes(tn.split(" ")[0]);
+  }) || null;
+}
+function surgeTargetTile(s){
+  const order = [s.firstSource].concat(s.sources || []);
+  for(const src of order){ const t = tileForSource(src); if(t) return t; }
+  return null;
+}
+function renderSurge(){
+  const bar = document.getElementById("surgebar");
+  document.querySelectorAll(".tile.surging").forEach(el=>el.classList.remove("surging"));
+  const s = (lastSurges || [])[0];
+  if(!s){ bar.className = ""; bar.innerHTML = ""; return; }
+  bar.className = "on";
+  bar.innerHTML = "<b>⚠ SURGE</b><span>"+esc(String(s.term).toUpperCase())+" — "+s.count+" outlets are reporting this story at once: "+esc((s.sources||[]).join(", "))+"</span>";
+  const story = s.firstHeadline || s.headline;
+  if(story) bar.innerHTML += "<span>Story: “"+esc(story)+"”</span>";
+  const b = document.createElement("button");
+  const tt = surgeTargetTile(s);
+  b.textContent = tt ? "🔊 Listen to the first report ("+tt.name+")" : "🔊 Listen to the first report";
+  if(tt && !isMobile()){
+    const pg = pageOfTile(tt);
+    if(pg >= 0 && pg !== curPage()){
+      const h = document.createElement("span");
+      h.className = "pghint"; h.textContent = "PAGE " + (pg+1);
+      bar.appendChild(h);
+      b.textContent += " \u2192 page " + (pg+1);
+    }
+  }
+  b.onclick = ()=> listenToFirstReport(s, b);
+  bar.appendChild(b);
+  (s.sources || []).forEach(src=>{
+    const t = tileForSource(src);
+    if(t){ const el = document.querySelector('.tile[data-id="'+t.id+'"]'); if(el) el.classList.add("surging"); }
+  });
+  wakeFromSurge();
+}
+/* Night watch: dim and mute the wall; a surge briefly restores full brightness. */
+const nightBtn = document.getElementById("btnNight");
+function setNight(on, manual){
+  document.body.classList.toggle("night", on);
+  nightBtn.classList.toggle("active", on);
+  if(manual){ try{ localStorage.setItem("ncc-night", on ? "on" : "off"); }catch(e){} }
+  if(on){
+    state.tiles.forEach(t=>{
+      if(players[t.id]){ try{ players[t.id].mute(); }catch(e){} }
+      const v = document.querySelector('.tile[data-id="'+t.id+'"] video');
+      if(v) v.muted = true;
+    });
+  }
+}
+nightBtn.onclick = ()=> setNight(!document.body.classList.contains("night"), true);
+let surgeWakeTimer = null;
+function wakeFromSurge(){
+  if(!document.body.classList.contains("night")) return;
+  document.body.classList.add("surge-wake");
+  if(surgeWakeTimer) clearTimeout(surgeWakeTimer);
+  surgeWakeTimer = setTimeout(()=> document.body.classList.remove("surge-wake"), 90000);
+}
+/* Dead-air watchdog: a tile that shows no playback progress for 75s gets an
+   immediate re-resolve / remount instead of waiting for the 30-minute cycle.
+   At most two recoveries per stall; the STALLED badge stays until it plays. */
+function watchdog(){
+  const now = Date.now();
+  state.tiles.forEach(t=>{
+    const el = document.querySelector('.tile[data-id="'+t.id+'"]');
+    if(!el || !t.mountTime || t.plated || t.isUpcoming) return;
+    if(isMobile() && t.id !== mobileActiveId) return;
+    if(t.channelForm && !t.video) return;
+    let frozen = false;
+    if(t.live && players[t.id] && players[t.id].getCurrentTime){
+      try{
+        const ct = players[t.id].getCurrentTime();
+        if(t.lastCt !== undefined && ct === t.lastCt && ct > 0) frozen = true;
+        t.lastCt = ct;
+      }catch(e){}
+    }
+    const noProgress = now - Math.max(t.lastProgress || 0, t.mountTime) > 75000;
+    if((!t.live && noProgress) || (t.live && frozen)){
+      if(t.live && frozen) setLive(t, false);
+      setStall(t, true);
+      if((t.recoveries || 0) < 2 && now - (t.lastRecovery || 0) > 120000){
+        t.recoveries = (t.recoveries || 0) + 1;
+        t.lastRecovery = now;
+        if(t.channel) resolveTile(t);
+        mountTile(t);
+      }
+    } else if(t.live){
+      t.recoveries = 0;
+      setStall(t, false);
+    }
+  });
+}
+setInterval(watchdog, 30000);
+
+/* ================= reset / init ================= */
+document.getElementById("btnReset").onclick = ()=>{
+  if(confirm("Reset the wall to the verified default streams and feeds?")){
+    localStorage.removeItem(LS_KEY); location.reload();
+  }
+};
+document.body.classList.toggle("mobile", isMobile());
+function onMQChange(){ document.body.classList.toggle("mobile", isMobile()); renderWall(); }
+if(MQ.addEventListener) MQ.addEventListener("change", onMQChange);
+else if(MQ.addListener) MQ.addListener(onMQChange);
+renderScenes();
+renderWall();
+renderFeedList();
+fetchFeeds();
+(function initNight(){
+  let pref = null;
+  try{ pref = localStorage.getItem("ncc-night"); }catch(e){}
+  if(pref) setNight(pref === "on", false);
+  else { const h = new Date().getHours(); if(h >= 23 || h < 7) setNight(true, false); }
+})();
+setTimeout(resolveAll, 2500);
+if("serviceWorker" in navigator){ navigator.serviceWorker.register("/sw.js").catch(()=>{}); }
+</script>
+</body>
+</html>
