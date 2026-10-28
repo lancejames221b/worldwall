@@ -208,7 +208,7 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js" integrity="sha384-w6Gb3fXHb5e1LUYa/hYA5Q41bEDglN5ZPCG7Jvnoo8/X90oGnlPqBlBJCe38mEMm" crossorigin="anonymous"></script>
 <script>
 "use strict";
 /* ================= data ================= */
@@ -220,23 +220,23 @@
    Sky News Australia, Rai News 24) run on direct HLS instead, playlist and
    segment tested 2026-10-22. Order is world-first; Canada is in the mix. */
 const PRESETS = [
-  {name:"BBC News",            channel:"UC16niRr50-MSBwiO3YDb3RA", video:"-NabWfv-VdA", region:"Europe", owner:"UK · Public"},
-  {name:"Sky News",            channel:"UCoMdktPbSTixAyNGwb-UYkQ", video:"umLWFz4izTM", region:"Europe", owner:"UK · Private"},
-  {name:"Al Jazeera English",  channel:"UCNye-wNBqNL5ZzHSJj3l8Bg", video:"gCNeDWCI0vo", hls:"https://live-hls-apps-aje-fa.getaj.net/AJE/index.m3u8", region:"Middle East", owner:"Qatar · State"},
-  {name:"DW News English",     channel:"UCknLrEdhRCp1aegoMqRaCZg", video:"LuKwFajn37U", hls:"https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8", region:"Europe", owner:"Germany · Public"},
-  {name:"France 24 English",   channel:"UCQfwfsi5VrQ8yKZ-UWmAEFg", video:"HvZt-nh9sGg", hls:"https://live.france24.com/hls/live/2037218-b/F24_EN_HI_HLS/master_5000.m3u8", region:"Europe", owner:"France · State"},
-  {name:"Euronews English",    channel:"UCSrZ3UV4jOidv8ppoVuvW9Q", video:"pykpO5kQJ98", region:"Europe", owner:"Europe · Private"},
-  {name:"ABC News Live",       channel:"UCBi2mrWuNuyYy4gbM6fU18Q", video:"iipR5yUp36o", region:"Americas", owner:"US · Private"},
-  {name:"NBC News NOW",        channel:"UCeY0bbntWzzVIaj2z3QigXg", video:"xPtxnwQREmE", region:"Americas", owner:"US · Private"},
-  {name:"Bloomberg TV",        channel:"UCIALMKvObZNtJ6AmdCLP7Lg", video:"QB5BNdBFujE", hls:"https://www.bloomberg.com/media-manifest/streams/us.m3u8", region:"Americas", owner:"US · Private"},
-  {name:"CBC News",            channel:"UCuFFtHWoLl5fauMMD5Ww2jA", video:"5vfaDsMhCF4", region:"Canada", owner:"Canada · Public"},
+  {name:"BBC News", feed:"BBC News",            channel:"UC16niRr50-MSBwiO3YDb3RA", video:"-NabWfv-VdA", region:"Europe", owner:"UK · Public"},
+  {name:"Sky News", feed:"Sky News",            channel:"UCoMdktPbSTixAyNGwb-UYkQ", video:"umLWFz4izTM", region:"Europe", owner:"UK · Private"},
+  {name:"Al Jazeera English", feed:"Al Jazeera",  channel:"UCNye-wNBqNL5ZzHSJj3l8Bg", video:"gCNeDWCI0vo", hls:"https://live-hls-apps-aje-fa.getaj.net/AJE/index.m3u8", region:"Middle East", owner:"Qatar · State"},
+  {name:"DW News English", feed:"DW",     channel:"UCknLrEdhRCp1aegoMqRaCZg", video:"LuKwFajn37U", hls:"https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8", region:"Europe", owner:"Germany · Public"},
+  {name:"France 24 English", feed:"France 24",   channel:"UCQfwfsi5VrQ8yKZ-UWmAEFg", video:"HvZt-nh9sGg", hls:"https://live.france24.com/hls/live/2037218-b/F24_EN_HI_HLS/master_5000.m3u8", region:"Europe", owner:"France · State"},
+  {name:"Euronews English", feed:"Euronews",    channel:"UCSrZ3UV4jOidv8ppoVuvW9Q", video:"pykpO5kQJ98", region:"Europe", owner:"Europe · Private"},
+  {name:"ABC News Live", feed:"ABC News",       channel:"UCBi2mrWuNuyYy4gbM6fU18Q", video:"iipR5yUp36o", region:"Americas", owner:"US · Private"},
+  {name:"NBC News NOW", feed:"NBC News",        channel:"UCeY0bbntWzzVIaj2z3QigXg", video:"xPtxnwQREmE", region:"Americas", owner:"US · Private"},
+  {name:"Bloomberg TV", feed:"Bloomberg",        channel:"UCIALMKvObZNtJ6AmdCLP7Lg", video:"QB5BNdBFujE", hls:"https://www.bloomberg.com/media-manifest/streams/us.m3u8", region:"Americas", owner:"US · Private"},
+  {name:"CBC News", feed:"CBC News",            channel:"UCuFFtHWoLl5fauMMD5Ww2jA", video:"5vfaDsMhCF4", region:"Canada", owner:"Canada · Public"},
   {name:"TRT World",           channel:"UC7fWeaHhqgM4Ry-RMpM2YYw", video:"qBe59l6p_EU", region:"Middle East", owner:"Türkiye · State"},
   {name:"Al Arabiya English",  channel:"UCIZJ9a6P_nxCFJTmL0gh_IQ", video:"7fGD8Ouqu5w", region:"Middle East", owner:"Saudi · State-linked"},
   {name:"Africanews",          channel:"UC1_E8NeF5QHY2dtdLRBCCLA", video:"NQjabLGdP5g", region:"Africa", owner:"Pan-African · Private"},
-  {name:"Channels Television", channel:"UCEXGDNclvmg6RW0vipJYsTQ", video:"d4zDorDl5UE", region:"Africa", owner:"Nigeria · Private"},
+  {name:"Channels Television", feed:"Channels Television", channel:"UCEXGDNclvmg6RW0vipJYsTQ", video:"d4zDorDl5UE", region:"Africa", owner:"Nigeria · Private"},
   {name:"CNA",                 channel:"UC83jt4dlz1Gjl58fzQrrKZg", video:"-PWMxjBgr0k", region:"Asia-Pacific", owner:"Singapore · State-linked"},
   {name:"NHK World-Japan",     channel:"UCSPEjw8F2nQDtmUKPFNF7_A", video:"IimtbuqYIE8", region:"Asia-Pacific", owner:"Japan · Public"},
-  {name:"NDTV",                channel:"UCZFMm1mMw0F81Z37aaEzTUA", video:"__JFciWYWqI", region:"Asia-Pacific", owner:"India · Private"},
+  {name:"NDTV", feed:"NDTV",                channel:"UCZFMm1mMw0F81Z37aaEzTUA", video:"__JFciWYWqI", region:"Asia-Pacific", owner:"India · Private"},
   {name:"GB News",             channel:"UC0vn8ISa4LKMunLbzaXLnOQ", video:"EDbWwVR7i9Q", region:"Europe", owner:"UK · Private"},
   {name:"TVP World",           channel:"UCBjUPsHj7bXt24SUWNoZ0zA", video:"tvXWIgsWuK0", region:"Europe", owner:"Poland · Public"},
   {name:"United24 Media",      channel:"UCX-xHRN9CnoXto5gcPskANA", video:"aOx7U0kptzU", region:"Europe", owner:"Ukraine · State"},
@@ -244,8 +244,8 @@ const PRESETS = [
   {name:"Sky News Australia",  hls:"https://skynewsau-live-premium.akamaized.net/hls/live/2105299/skynews/live.m3u8", region:"Asia-Pacific", owner:"Australia · Private"},
   {name:"Arirang TV",          channel:"UC-PHIZjV-oX8H7zD1cCN2NQ", video:"hvVlyZ5GiE8", region:"Asia-Pacific", owner:"South Korea · State"},
   {name:"CGTN",                channel:"UCgrNz-aDmcr2uuto8_DL2jg", video:"0i7n3r01L2U", region:"Asia-Pacific", owner:"China · State"},
-  {name:"Global News",         channel:"UChLtXXpo4Ge1ReTEboVvTDg", channelForm:true, region:"Canada", owner:"Canada · Private"},
-  {name:"CTV News",            channel:"UCi7Zk9baY1tvdlgxIML8MXg", channelForm:true, region:"Canada", owner:"Canada · Private"},
+  {name:"Global News", feed:"Global News",         channel:"UChLtXXpo4Ge1ReTEboVvTDg", channelForm:true, region:"Canada", owner:"Canada · Private"},
+  {name:"CTV News", feed:"CTV News",            channel:"UCi7Zk9baY1tvdlgxIML8MXg", channelForm:true, region:"Canada", owner:"Canada · Private"},
   {name:"NTV Kenya",           channel:"UCqBJ47FjJcl61fmSbcadAVg", video:"PpcDyA3KOeg", region:"Africa", owner:"Kenya · Private"},
   {name:"JoyNews",             channel:"UChd1DEecCRlxaa0-hvPACCw", video:"ccATCYzS_ys", region:"Africa", owner:"Ghana · Private"},
   {name:"SABC News",           hls:"https://sabconetanw.cdn.mangomolo.com/news/smil:news.stream.smil/master.m3u8", region:"Africa", owner:"South Africa · Public"},
@@ -403,23 +403,43 @@ const AUTHORS = {
 const LS_KEY = "ncc-state-v5";
 let uid = 1;
 function mkTile(p){ return {id: uid++, name:p.name, channel:p.channel||null, video:p.video||null,
-  hls:p.hls||null, channelForm:!!p.channelForm, src: p.hls && !p.video ? "hls" : "yt", live:null,
-  region: p.region || "", owner: p.owner || "",
-  author: AUTHORS[p.channel] || "", prevVideo:null, pendingAuthorCheck:false, resolveLocked:false}; }
+  hls:p.hls||null, channelForm:!!p.channelForm, eventsOnly:!!p.channelForm, src: p.hls && !p.video ? "hls" : "yt", live:null,
+  region: p.region || "", owner: p.owner || "", feed: p.feed || null,
+  author: AUTHORS[p.channel] || "", prevVideo:null, pendingAuthorCheck:false, lockedUntil:0, isUpcoming:false}; }
 
 let state = loadState();
 function loadState(){
   try{
     const raw = localStorage.getItem(LS_KEY);
-    if(raw){ const s = JSON.parse(raw); s.tiles.forEach(t=>{ t.id = uid++; if(!t.author) t.author = AUTHORS[t.channel] || "";
-      const p = PRESETS.find(x=>x.name === t.name); if(p){ if(!t.region) t.region = p.region || ""; if(!t.owner) t.owner = p.owner || ""; } });
+    if(raw){ const s = JSON.parse(raw);
+      if(!Array.isArray(s.removedPresets)) s.removedPresets = [];
+      s.tiles.forEach(t=>{ t.id = uid++; if(!t.author) t.author = AUTHORS[t.channel] || "";
+        /* F4: a saved permanent resolve lock becomes a 2h timed lock */
+        if(t.resolveLocked){ t.lockedUntil = Date.now() + 2*60*60*1000; }
+        delete t.resolveLocked;
+        const p = PRESETS.find(x=>x.name === t.name);
+        if(p){
+          /* F5: preset-owned fields refresh from PRESETS on every load, so
+             fixed stream addresses reach walls with old state saved. The
+             user's order and custom tiles are untouched; the current video
+             is the resolver's business, not the preset's. */
+          t.hls = p.hls || null; t.channel = p.channel || null;
+          t.channelForm = !!p.channelForm; t.eventsOnly = !!p.channelForm;
+          t.region = p.region || ""; t.owner = p.owner || "";
+          t.author = AUTHORS[p.channel] || t.author; t.feed = p.feed || null;
+        } else if(t.eventsOnly === undefined){ t.eventsOnly = !!t.channelForm; }
+      });
+      /* F5: presets added since this state was saved join the wall, unless
+         the user removed that preset on purpose (Reset clears the record) */
+      PRESETS.forEach(p=>{ if(!s.tiles.some(t=>t.name === p.name) && !s.removedPresets.includes(p.name)) s.tiles.push(mkTile(p)); });
       if(!s.pages || typeof s.pages !== "object") s.pages = {}; s.rotate = !!s.rotate; return s; }
   }catch(e){}
-  return { layout:"c3", tiles: PRESETS.map(mkTile), feeds: [], scene: "All", pages: {}, rotate: false };
+  return { layout:"c3", tiles: PRESETS.map(mkTile), feeds: [], scene: "All", pages: {}, rotate: false, removedPresets: [] };
 }
 function saveState(){
   const s = { layout: state.layout, feeds: state.feeds, scene: state.scene || "All", pages: state.pages || {}, rotate: !!state.rotate,
-    tiles: state.tiles.map(t=>({name:t.name, channel:t.channel, video:t.video, hls:t.hls, channelForm:t.channelForm, src:t.src, region:t.region || "", owner:t.owner || ""})) };
+    removedPresets: state.removedPresets || [],
+    tiles: state.tiles.map(t=>({name:t.name, channel:t.channel, video:t.video, hls:t.hls, channelForm:t.channelForm, eventsOnly:!!t.eventsOnly, isUpcoming:!!t.isUpcoming, lockedUntil:t.lockedUntil || 0, feed:t.feed || null, src:t.src, region:t.region || "", owner:t.owner || ""})) };
   try{ localStorage.setItem(LS_KEY, JSON.stringify(s)); }catch(e){}
 }
 </script>
@@ -454,6 +474,10 @@ function whenYT(f){ ytReady ? f() : ytWaiters.push(f); }
 
 function setLive(t, on){
   t.live = on;
+  /* F2 bookkeeping: a tile that is genuinely playing clears its plate
+     backoff; liveSince drives the 30-minute recovery-cap refill */
+  if(on){ t.liveSince = Date.now(); t.plateRetries = 0; t.nextPlateRetry = undefined; }
+  else t.liveSince = 0;
   const d = document.querySelector('.tile[data-id="'+t.id+'"] .dot');
   if(d){ d.className = "dot" + (on ? " live" : " off"); }
   updateLiveStat();
@@ -583,7 +607,7 @@ function tileEl(t){
   el.innerHTML =
     '<div class="bar"><span class="dot off"></span><span class="name">'+esc(t.name)+'</span>' +
     (t.owner ? '<span class="owner">'+esc(t.owner.toUpperCase())+'</span>' : "") +
-    '<span class="badge">'+(t.channelForm ? "EVENTS" : "LIVE")+'</span>' +
+    '<span class="badge">'+((t.eventsOnly || t.channelForm) ? "EVENTS" : "LIVE")+'</span>' +
     '<span class="stallbadge" style="display:none">STALLED</span><span class="sp"></span>' +
     srcBadge +
     '<button data-act="audio" title="Sound on this tile only">🔊</button>' +
@@ -622,9 +646,10 @@ function mountTile(t){
   }
   destroyScreen(t);
   t.plated = false; t.mountTime = Date.now(); t.lastProgress = 0; setStall(t, false);
+  t.hlsNetTried = false; t.hlsMedTried = false;
   if(t.src === "hls" && t.hls){ mountHLS(t, sc); return; }
   const vid = t.video;
-  if(!vid && t.channelForm){
+  if(!vid && (t.channelForm || t.eventsOnly)){
     plate(t, "No live stream at the moment. The next scheduled event will appear here.",
       "https://www.youtube.com/channel/"+t.channel+"/live");
     return;
@@ -646,7 +671,9 @@ function mountTile(t){
             t.pendingAuthorCheck = false;
             const au = (e.target.getVideoData && e.target.getVideoData().author) || "";
             if(t.author && au && !authorMatch(au, t.author)){
-              t.resolveLocked = true;
+              /* F4: a mismatch locks resolving for 2h, not for the life of
+                 the page, so one odd author string cannot pin a tile */
+              t.lockedUntil = Date.now() + 2*60*60*1000;
               if(t.prevVideo){ t.video = t.prevVideo; saveState(); mountTile(t); }
               return;
             }
@@ -675,7 +702,14 @@ function mountHLS(t, sc){
   if(window.Hls && Hls.isSupported()){
     const h = new Hls({liveSyncDurationCount:3, maxLiveSyncPlaybackRate:1.5});
     h.loadSource(t.hls); h.attachMedia(v);
-    h.on(Hls.Events.ERROR, (ev, data)=>{ if(data && data.fatal) plate(t, "HLS stream failed to load.", null); });
+    h.on(Hls.Events.ERROR, (ev, data)=>{
+      if(!data || !data.fatal) return;
+      /* F2: give hls.js's own recovery one chance per error class before
+         plating; a repeated or unrecoverable fatal error still plates */
+      if(data.type === Hls.ErrorTypes.NETWORK_ERROR && !t.hlsNetTried){ t.hlsNetTried = true; try{ h.startLoad(); }catch(e){} return; }
+      if(data.type === Hls.ErrorTypes.MEDIA_ERROR && !t.hlsMedTried){ t.hlsMedTried = true; try{ h.recoverMediaError(); }catch(e){} return; }
+      plate(t, "HLS stream failed to load.", null);
+    });
     hlsObjs[t.id] = h;
   } else if(v.canPlayType("application/vnd.apple.mpegurl")){
     v.src = t.hls;
@@ -694,6 +728,12 @@ function removeTile(t){
   const el = document.querySelector('.tile[data-id="'+t.id+'"]');
   if(el) el.remove();
   state.tiles = state.tiles.filter(x=>x.id !== t.id);
+  /* F5: remember deliberate preset removals so the load-time preset merge
+     does not resurrect them (the Library can still re-add one by hand) */
+  if(PRESETS.some(p=>p.name === t.name)){
+    if(!state.removedPresets) state.removedPresets = [];
+    if(!state.removedPresets.includes(t.name)) state.removedPresets.push(t.name);
+  }
   saveState(); updateLiveStat(); fitGrid(); renderPager();
 }
 function playerAudible(t){
@@ -870,7 +910,7 @@ function authorMatch(a, b){
   return !na || !nb || na.includes(nb) || nb.includes(na);
 }
 async function resolveTile(t){
-  if(!t.channel || t.resolveLocked) return;
+  if(!t.channel || (t.lockedUntil && t.lockedUntil > Date.now())) return;
   try{
     const qs = "/api/resolve?c=" + encodeURIComponent(t.channel) +
       (t.video ? "&cur=" + encodeURIComponent(t.video) : "") +
@@ -878,7 +918,9 @@ async function resolveTile(t){
     const r = await fetch(qs);
     if(!r.ok) return;
     const d = await r.json();
-    if(d && d.videoId && d.isLive && (t.channelForm || d.videoId !== t.video)){
+    /* F3: event behaviour keys off eventsOnly, which going live never
+       clears, so an event tile picks up the NEXT event after this one ends */
+    if(d && d.videoId && d.isLive && (t.eventsOnly || d.videoId !== t.video)){
       t.prevVideo = t.video || null;
       t.video = d.videoId; t.channelForm = false; t.isUpcoming = false;
       t.pendingAuthorCheck = !!t.author;
@@ -887,14 +929,14 @@ async function resolveTile(t){
       /* the LIVE dot is set by the player itself when it reaches PLAYING,
          never on the resolver's word alone */
     }
-    else if(d && !d.isLive && d.upcoming && t.channelForm && t.video !== d.upcoming.videoId){
+    else if(d && !d.isLive && d.upcoming && t.eventsOnly && t.video !== d.upcoming.videoId){
       /* event-only channel with a scheduled event: embed the event video
          itself (shows YouTube's countdown slate, goes live on its own) */
       t.video = d.upcoming.videoId; t.isUpcoming = true;
       saveState();
       if(t.src !== "hls" && (!isMobile() || mobileActiveId === t.id)) mountTile(t);
     }
-    else if(d && !d.isLive && !d.upcoming && t.channelForm && !t.video){
+    else if(d && !d.isLive && !d.upcoming && t.eventsOnly && !t.video){
       if(isMobile() && mobileActiveId !== t.id) mobilePlate(t, "NO LIVE EVENT SCHEDULED");
       else plate(t, "No live or scheduled stream right now.",
         "https://www.youtube.com/channel/"+t.channel+"/live");
@@ -950,9 +992,14 @@ function renderWire(){
   if(!wireItems.length){ sit.innerHTML = '<div class="sit">No wire items yet.</div>'; hl.innerHTML = ""; return; }
   sit.innerHTML = wireItems.slice(0,5).map(i=>
     '<div class="sit"><b>'+esc(i.source.toUpperCase())+" · "+age(i.ts)+'</b>'+esc(i.title)+'</div>').join("");
-  hl.innerHTML = wireItems.slice(0,60).map(i=>
-    '<div class="hl"><a href="'+esc(i.link)+'" target="_blank" rel="noopener">'+esc(i.title)+'</a>' +
-    '<div class="meta"><b>'+esc(i.source.toUpperCase())+'</b> · '+age(i.ts)+'</div></div>').join("");
+  hl.innerHTML = wireItems.slice(0,60).map(i=>{
+    /* F1: defence in depth behind the server-side check in feeds.js: only
+       http(s) becomes an anchor; anything else renders as plain text */
+    let okLink = false;
+    try{ const u = new URL(i.link); okLink = u.protocol === "http:" || u.protocol === "https:"; }catch(e){}
+    const title = okLink ? '<a href="'+esc(i.link)+'" target="_blank" rel="noopener">'+esc(i.title)+'</a>' : esc(i.title);
+    return '<div class="hl">'+title+'<div class="meta"><b>'+esc(i.source.toUpperCase())+'</b> · '+age(i.ts)+'</div></div>';
+  }).join("");
   const titles = wireItems.slice(0,30).map(i=>"<span><i>▸</i>"+esc(i.title)+"</span>").join("");
   document.getElementById("tickerTrack").innerHTML = titles + titles;
   renderFeedList();
@@ -1043,12 +1090,11 @@ document.addEventListener("keydown", e=>{ if(e.key === "Escape" && focusedEl){ f
 
 /* ================= surge / night watch / dead-air watchdog ================= */
 function tileForSource(src){
-  const n = (src || "").toLowerCase();
-  if(!n) return null;
-  return state.tiles.find(t=>{
-    const tn = t.name.toLowerCase();
-    return tn.includes(n) || n.includes(tn.split(" ")[0]);
-  }) || null;
+  /* F7: exact match on the preset's feed tag only. The old substring
+     heuristic lit the wrong broadcaster ("Sky News" could match Sky News
+     Arabia); no exact tag means no tile lights up. */
+  if(!src) return null;
+  return state.tiles.find(t=>t.feed && t.feed === src) || null;
 }
 function surgeTargetTile(s){
   const order = [s.firstSource].concat(s.sources || []);
@@ -1100,21 +1146,53 @@ function setNight(on, manual){
 }
 nightBtn.onclick = ()=> setNight(!document.body.classList.contains("night"), true);
 let surgeWakeTimer = null;
+let lastWokenTerm = "", lastWokenAt = 0;
 function wakeFromSurge(){
   if(!document.body.classList.contains("night")) return;
+  /* F6: only a NEW top surge term wakes the wall, and at most once per
+     20 min. Re-rendering the same surge on every page turn used to re-arm
+     the wake each time, so Night Watch never actually stayed dark. */
+  const s = (lastSurges || [])[0];
+  const term = s ? String(s.term || "") : "";
+  const now = Date.now();
+  if(term && term === lastWokenTerm) return;
+  if(now - lastWokenAt < 20*60000) return;
+  lastWokenTerm = term; lastWokenAt = now;
   document.body.classList.add("surge-wake");
   if(surgeWakeTimer) clearTimeout(surgeWakeTimer);
   surgeWakeTimer = setTimeout(()=> document.body.classList.remove("surge-wake"), 90000);
 }
 /* Dead-air watchdog: a tile that shows no playback progress for 75s gets an
    immediate re-resolve / remount instead of waiting for the 30-minute cycle.
-   At most two recoveries per stall; the STALLED badge stays until it plays. */
+   At most two recoveries per stall; the STALLED badge stays until it plays.
+   F2: plated tiles are no longer abandoned either. They retry on a backoff
+   (2, 5, 15, then every 30 min) so one transient failure cannot plate a
+   tile for days on an unattended wall. */
+const PLATE_BACKOFF_MIN = [2, 5, 15, 30];
 function watchdog(){
   const now = Date.now();
   state.tiles.forEach(t=>{
     const el = document.querySelector('.tile[data-id="'+t.id+'"]');
-    if(!el || !t.mountTime || t.plated || t.isUpcoming) return;
+    if(!el || !t.mountTime) return;
     if(isMobile() && t.id !== mobileActiveId) return;
+    if(t.plated){
+      if(t.isUpcoming) return;
+      if(t.nextPlateRetry === undefined){
+        t.plateRetries = t.plateRetries || 0;
+        t.nextPlateRetry = now + PLATE_BACKOFF_MIN[0]*60000;
+        return;
+      }
+      if(now >= t.nextPlateRetry){
+        t.plateRetries = (t.plateRetries || 0) + 1;
+        const mins = PLATE_BACKOFF_MIN[Math.min(t.plateRetries, PLATE_BACKOFF_MIN.length - 1)];
+        t.nextPlateRetry = now + mins*60000;
+        t.plated = false;
+        if(t.channel) resolveTile(t);
+        mountTile(t);
+      }
+      return;
+    }
+    if(t.isUpcoming) return;
     if(t.channelForm && !t.video) return;
     let frozen = false;
     if(t.live && players[t.id] && players[t.id].getCurrentTime){
@@ -1124,9 +1202,13 @@ function watchdog(){
         t.lastCt = ct;
       }catch(e){}
     }
+    /* F2: an HLS tile whose segments stopped arriving never errors and its
+       dot stays green; timeupdate only advances lastProgress while media
+       actually plays, so a stale lastProgress while "live" is the stall */
+    const hlsStalled = t.live && t.src === "hls" && t.lastProgress && (now - t.lastProgress > 25000);
     const noProgress = now - Math.max(t.lastProgress || 0, t.mountTime) > 75000;
-    if((!t.live && noProgress) || (t.live && frozen)){
-      if(t.live && frozen) setLive(t, false);
+    if((!t.live && noProgress) || (t.live && frozen) || hlsStalled){
+      if(t.live && (frozen || hlsStalled)) setLive(t, false);
       setStall(t, true);
       if((t.recoveries || 0) < 2 && now - (t.lastRecovery || 0) > 120000){
         t.recoveries = (t.recoveries || 0) + 1;
@@ -1135,7 +1217,8 @@ function watchdog(){
         mountTile(t);
       }
     } else if(t.live){
-      t.recoveries = 0;
+      /* F2: the two-recovery cap refills after 30 min of continuous play */
+      if(t.liveSince && now - t.liveSince > 30*60000) t.recoveries = 0;
       setStall(t, false);
     }
   });
